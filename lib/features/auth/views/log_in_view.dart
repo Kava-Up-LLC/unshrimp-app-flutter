@@ -28,6 +28,17 @@ class LogInView extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            Center(
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/icon_round.png',
+                  width: 128,
+                  height: 128,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
             TextField(
               enabled: !state.isLoading,
               keyboardType: TextInputType.emailAddress,

@@ -7,14 +7,28 @@ import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/auth/view_models/log_in_view_model.dart';
 import 'package:move_well_app/features/auth/view_models/session_gate_view_model.dart';
 import 'package:move_well_app/features/auth/view_models/sign_up_view_model.dart';
+import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
+import '../reminders/fakes.dart';
 import 'fakes.dart';
 
-ProviderContainer _container(FakeAuthRepository repo, FakeTokenStorage store) {
+ProviderContainer _container(
+  FakeAuthRepository repo,
+  FakeTokenStorage store, [
+  FakeReminderScheduler? scheduler,
+  FakeReminderNotifications? notifications,
+]) {
   final container = ProviderContainer(
     overrides: [
       authRepositoryProvider.overrideWithValue(repo),
       tokenStorageProvider.overrideWithValue(store),
+      reminderSchedulerProvider.overrideWithValue(
+        scheduler ?? FakeReminderScheduler(),
+      ),
+      reminderNotificationsProvider.overrideWithValue(
+        notifications ?? FakeReminderNotifications(),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -81,22 +95,64 @@ void main() {
       expect(state.isLoading, isFalse);
       expect(store.token, isNull);
     });
+
+    test('a successful login reschedules the reminders', () async {
+      final store = FakeTokenStorage();
+      final scheduler = FakeReminderScheduler();
+      final container = _container(FakeAuthRepository(), store, scheduler);
+      container.listen(logInViewModelProvider, (_, _) {});
+      final vm = container.read(logInViewModelProvider.notifier)
+        ..emailChanged('ada@example.com')
+        ..passwordChanged('secret123');
+
+      await vm.submit();
+
+      expect(store.token, isNotNull);
+      expect(scheduler.fromServerCalls, 1);
+    });
   });
 
   group('SessionGateViewModel', () {
     test('no stored token -> unauthenticated', () async {
       final container = _container(FakeAuthRepository(), FakeTokenStorage());
       expect(
-        await container.read(sessionGateViewModelProvider.future),
+        (await container.read(sessionGateViewModelProvider.future)).status,
         SessionStatus.unauthenticated,
       );
     });
 
-    test('valid token -> authenticated', () async {
+    test('valid token -> authenticated and reminders rescheduled', () async {
+      final scheduler = FakeReminderScheduler();
+      final container = _container(
+        FakeAuthRepository(),
+        FakeTokenStorage('t'),
+        scheduler,
+      );
+      expect(
+        (await container.read(sessionGateViewModelProvider.future)).status,
+        SessionStatus.authenticated,
+      );
+      expect(scheduler.fromServerCalls, 1);
+    });
+
+    test('valid token opens Home', () async {
       final container = _container(FakeAuthRepository(), FakeTokenStorage('t'));
       expect(
-        await container.read(sessionGateViewModelProvider.future),
-        SessionStatus.authenticated,
+        (await container.read(sessionGateViewModelProvider.future)).location,
+        '/',
+      );
+    });
+
+    test('launched by a tapped reminder -> opens its break', () async {
+      final container = _container(
+        FakeAuthRepository(),
+        FakeTokenStorage('t'),
+        null,
+        FakeReminderNotifications(launch: 'neck'),
+      );
+      expect(
+        (await container.read(sessionGateViewModelProvider.future)).location,
+        '/break?source=reminder&zone=neck',
       );
     });
 
@@ -104,7 +160,7 @@ void main() {
       final store = FakeTokenStorage('t');
       final container = _container(FakeAuthRepository(valid: false), store);
       expect(
-        await container.read(sessionGateViewModelProvider.future),
+        (await container.read(sessionGateViewModelProvider.future)).status,
         SessionStatus.unauthenticated,
       );
       expect(store.token, isNull);

@@ -13,6 +13,8 @@ class AppBootstrap {
     WidgetsFlutterBinding.ensureInitialized();
 
     await dotenv.load(fileName: '.env');
+    // Remote Config is fetched during start(), so enable it first.
+    await AppAmbitSdk.enableConfig();
     await AppAmbitSdk.start(appKey: dotenv.env['APPAMBIT_APP_KEY']!);
 
     runApp(const ProviderScope(child: MoveWellApp()));

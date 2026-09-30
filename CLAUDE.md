@@ -63,3 +63,18 @@ The `jwt_auth` test function lives in a separate AppAmbit app (key `294f7dd6-987
 After editing a `.dart` file under `lib/` (not comment/whitespace-only changes, not files in `test/` etc.):
 - Find the running app with the Dart MCP server (`dtd` / `list_running_apps`).
 - Call `hot_reload` after UI/widget or simple method changes; call `hot_restart` after changes to `main()`, provider/state initialization, or global/static state.
+
+## Design (screens)
+
+`DESIGN.md` is the visual contract for the app's screens, with a rendered mockup at
+`docs/design/day2_screens.png`. When building or changing a screen, follow `DESIGN.md`
+(layout, elements, states) together with the palette meaning above. Screen → feature map:
+
+- **Onboarding** (4-question flow) → `lib/features/onboarding/` — collects the answers and
+  sends them once to `save_onboarding`, which seeds `user_settings` **server-side** using the
+  deterministic map in `../../MARKETING/Ideas/PLAN.md` (§1.4 / §1.4.1 + Apéndice D). Never
+  derive the interval/goal on the client.
+- **Home** → `lib/features/home/` — reads `user_stats`.
+- **Settings / Ajustes** → `lib/features/settings/` — edits `user_settings` via
+  `update_settings` (incl. per-user `stealth_mode`, `paused_until`) and changes the password
+  via `auth_change_password`.

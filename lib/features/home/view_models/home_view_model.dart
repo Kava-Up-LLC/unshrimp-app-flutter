@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
+import '../../reminders/services/reminder_scheduler.dart';
 import '../models/user_stats.dart';
 import '../repositories/home_repository.dart';
 
@@ -34,6 +35,10 @@ class HomeViewModel extends AsyncNotifier<UserStats> {
     state = await AsyncValue.guard(build);
   }
 
-  /// Clears the stored session. The view navigates back to Log In.
-  Future<void> logOut() => ref.read(tokenStorageProvider).delete();
+  /// Cancels the reminders and clears the stored session. The view navigates
+  /// back to Log In.
+  Future<void> logOut() async {
+    await ref.read(reminderSchedulerProvider).cancelAll();
+    await ref.read(tokenStorageProvider).delete();
+  }
 }

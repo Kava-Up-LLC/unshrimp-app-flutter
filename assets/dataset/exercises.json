@@ -1,0 +1,471 @@
+{
+  "name": "MoveWell exercise dataset (office / desk posture breaks)",
+  "scope": "Office-appropriate only: every exercise is done standing or seated in a chair. No floor, mat, or lying poses.",
+  "generated": "2026-09-29",
+  "count": 13,
+  "source": {
+    "name": "RepDB free-tier exercise dataset",
+    "url": "https://repdb.co",
+    "repo": "https://github.com/RepDB/exercise-dataset",
+    "license": "RepDB Free Tier License v1.0",
+    "attribution_required": true,
+    "attribution_text": "Exercise data by RepDB (repdb.co)",
+    "notes": [
+      "Free for commercial IN-APP use with visible attribution in the app credits screen.",
+      "Do NOT republish this folder as a standalone dataset/API (term 3, in-app use only).",
+      "Images may be resized/cropped/recolored; not to be fed to generative AI (term 5).",
+      "GIFs in this folder are built locally from the free static start/peak frames (allowed resize/crop transform), NOT from RepDB paid preview animations."
+    ]
+  },
+  "zones": [
+    "lower_back",
+    "neck",
+    "none",
+    "shoulders"
+  ],
+  "exercises": [
+    {
+      "id": "neck-side-stretch",
+      "zone": "neck",
+      "title": "Neck Side Stretch",
+      "steps": "Sit or stand tall with your shoulders relaxed, then tilt your head so one ear drops toward that shoulder.",
+      "description": "A gentle stretch that lengthens the upper trapezius and side of the neck by tilting the ear toward the shoulder.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/neck-side-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/neck-side-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": "Upper trapezius stretch",
+      "source": "RepDB",
+      "source_id": "neck-side-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Sit or stand tall with your shoulders relaxed.",
+        "Tilt your head so one ear drops toward that shoulder.",
+        "Rest that hand lightly over your head for gentle weight.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Let the weight of your hand do the work, do not pull hard.",
+        "Keep the opposite shoulder pressed down."
+      ]
+    },
+    {
+      "id": "isometric-neck-side",
+      "zone": "neck",
+      "title": "Isometric Neck Lateral Flexion",
+      "steps": "Sit or stand tall. Place the palm of one hand against the side of the head, above the ear, then press the head into the hand while resisting equally with the hand, the head does not move.",
+      "description": "A static side-neck drill using the hand as resistance against the head, training the sternocleidomastoid and scalene without hardware.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/isometric-neck-side.gif",
+        "gif_type": "breathing",
+        "image": "media/isometric-neck-side-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "isometric-neck-side",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Sit or stand tall. Place the palm of one hand against the side of the head, above the ear.",
+        "Press the head into the hand while resisting equally with the hand, the head does not move.",
+        "Hold the isometric contraction for 5 to 10 seconds.",
+        "Release slowly, then repeat on the same side for the set.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Match the pressure; this is 50% effort, not a wrestling match.",
+        "Keep the jaw relaxed and the shoulders down."
+      ]
+    },
+    {
+      "id": "chin-tuck-hold",
+      "zone": "neck",
+      "title": "Chin Tuck Hold",
+      "steps": "Stand or sit tall with your shoulders relaxed, then pull your chin straight back, creating a double chin.",
+      "description": "A static neck drill that retracts the head straight back to strengthen the deep neck flexors and counter forward-head posture.",
+      "difficulty": "intermediate",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/chin-tuck-hold.gif",
+        "gif_type": "breathing",
+        "image": "media/chin-tuck-hold-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "chin-tuck-hold",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand or sit tall with your shoulders relaxed.",
+        "Pull your chin straight back, creating a double chin.",
+        "Keep your head level without tilting.",
+        "Hold the position for the desired duration.",
+        "Release and repeat for multiple sets."
+      ],
+      "tips": [
+        "Imagine sliding your head back over your spine, not nodding down.",
+        "Keep your gaze level and your breathing relaxed."
+      ]
+    },
+    {
+      "id": "cross-body-shoulder-stretch",
+      "zone": "shoulders",
+      "title": "Cross-Body Shoulder Stretch",
+      "steps": "Stand tall and bring one straight arm across your chest, then hook your other forearm under it.",
+      "description": "A standing stretch that targets the rear shoulder by drawing one arm horizontally across the chest.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/cross-body-shoulder-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/cross-body-shoulder-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "cross-body-shoulder-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand tall and bring one straight arm across your chest.",
+        "Hook your other forearm under it.",
+        "Gently pull the arm closer to your chest.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Keep the stretching shoulder down, not shrugged.",
+        "Do not pull on the elbow joint itself."
+      ]
+    },
+    {
+      "id": "doorway-chest-stretch",
+      "zone": "shoulders",
+      "title": "Doorway Chest Stretch",
+      "steps": "Stand tall and raise your arms into a goalpost position, then bend your elbows ninety degrees, forearms vertical.",
+      "description": "An open-arm stretch that lengthens the chest and front shoulders by drawing the arms back.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/doorway-chest-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/doorway-chest-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": "Chest opener",
+      "source": "RepDB",
+      "source_id": "doorway-chest-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand tall and raise your arms into a goalpost position.",
+        "Bend your elbows ninety degrees, forearms vertical.",
+        "Draw your elbows back and squeeze your shoulder blades.",
+        "Hold for 20 to 30 seconds, breathing steadily."
+      ],
+      "tips": [
+        "Keep your ribs down and avoid arching your back.",
+        "Stretch to mild tension, never to pain."
+      ]
+    },
+    {
+      "id": "overhead-triceps-stretch",
+      "zone": "shoulders",
+      "title": "Overhead Triceps Stretch",
+      "steps": "Raise one arm overhead and bend the elbow, then let your hand drop down behind your head.",
+      "description": "A standing stretch that lengthens the triceps and lat by reaching the hand down the upper back.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/overhead-triceps-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/overhead-triceps-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "overhead-triceps-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Raise one arm overhead and bend the elbow.",
+        "Let your hand drop down behind your head.",
+        "Use the other hand to press the bent elbow back.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Keep your head upright, do not push it forward.",
+        "Relax and keep breathing throughout."
+      ]
+    },
+    {
+      "id": "standing-side-bend",
+      "zone": "lower_back",
+      "title": "Standing Side Bend",
+      "steps": "Stand with feet hip-width and reach both arms overhead, then clasp your hands and lengthen up tall.",
+      "description": "A standing stretch that lengthens the obliques and lats by reaching overhead and bending to one side.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/standing-side-bend.gif",
+        "gif_type": "breathing",
+        "image": "media/standing-side-bend-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": "Stand and reach",
+      "source": "RepDB",
+      "source_id": "standing-side-bend",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand with feet hip-width and reach both arms overhead.",
+        "Clasp your hands and lengthen up tall.",
+        "Bend smoothly to one side in a long curve.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Keep both feet planted and hips steady.",
+        "Reach up and over rather than just leaning down."
+      ]
+    },
+    {
+      "id": "standing-side-bend-flow",
+      "zone": "lower_back",
+      "title": "Standing Side Bend Flow",
+      "steps": "Stand with the feet hip-width apart and reach both arms overhead, then bend the trunk to one side, keeping both feet planted and the hips level.",
+      "description": "A standing lateral flow: the arms reach overhead and the trunk bends from side to side in a controlled rhythm, lengthening the side body without holding either end position.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/standing-side-bend-flow.gif",
+        "gif_type": "twopose",
+        "image": "media/standing-side-bend-flow-start.webp",
+        "image_start": "media/standing-side-bend-flow-start.webp",
+        "image_peak": "media/standing-side-bend-flow-peak.webp"
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "standing-side-bend-flow",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand with the feet hip-width apart and reach both arms overhead.",
+        "Bend the trunk to one side, keeping both feet planted and the hips level.",
+        "Return through the centre with the ribs stacked over the pelvis.",
+        "Bend to the other side in the same way.",
+        "Keep alternating for the desired number of repetitions."
+      ],
+      "tips": [
+        "Bend sideways only: letting the chest rotate turns it into a twist.",
+        "Keep both heels down so the movement stays in the trunk.",
+        "Move with the breath rather than bouncing at the end of the range."
+      ]
+    },
+    {
+      "id": "pilates-roll-down",
+      "zone": "lower_back",
+      "title": "Pilates Roll Down",
+      "steps": "Stand tall with the feet hip-width apart and the arms hanging at the sides, then drop the chin to the chest and start rolling down one vertebra at a time.",
+      "description": "A standing articulation of the spine: the head leads a vertebra-by-vertebra roll towards the floor and back up, mobilising the whole back while the legs stay steady.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/pilates-roll-down.gif",
+        "gif_type": "twopose",
+        "image": "media/pilates-roll-down-start.webp",
+        "image_start": "media/pilates-roll-down-start.webp",
+        "image_peak": "media/pilates-roll-down-peak.webp"
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "pilates-roll-down",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand tall with the feet hip-width apart and the arms hanging at the sides.",
+        "Drop the chin to the chest and start rolling down one vertebra at a time.",
+        "Let the arms and head hang heavy once the spine is fully rolled down.",
+        "Roll back up the same way, stacking the vertebrae one by one, head last.",
+        "Repeat for the desired number of repetitions."
+      ],
+      "tips": [
+        "Keep the knees soft so the movement comes from the spine, not the hamstrings.",
+        "Move slowly enough to feel each segment; speed defeats the purpose.",
+        "Keep the weight in the middle of the feet as you roll down."
+      ]
+    },
+    {
+      "id": "mountain-pose",
+      "zone": "none",
+      "title": "Mountain Pose",
+      "steps": "Stand with the feet hip-width apart and spread the weight evenly across both feet, then engage the thighs lightly and let the tailbone drop so the pelvis is neutral.",
+      "description": "The basic standing posture: feet grounded, legs active, spine tall and shoulders relaxed. It is the reference alignment every other standing pose is measured against.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/mountain-pose.gif",
+        "gif_type": "breathing",
+        "image": "media/mountain-pose-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "mountain-pose",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand with the feet hip-width apart and spread the weight evenly across both feet.",
+        "Engage the thighs lightly and let the tailbone drop so the pelvis is neutral.",
+        "Stack the ribs over the pelvis and the head over the ribs, arms relaxed by the sides.",
+        "Hold the posture for the prescribed time, breathing evenly.",
+        "Notice where the weight sits and rebalance it towards the middle of each foot."
+      ],
+      "tips": [
+        "Lift and spread the toes once, then set them down; it resets the arch of the foot.",
+        "Keep the knees soft rather than locked back.",
+        "Let the shoulders roll back and down without pinning the shoulder blades together."
+      ]
+    },
+    {
+      "id": "standing-forward-fold",
+      "zone": "none",
+      "title": "Standing Forward Fold",
+      "steps": "Stand tall with your feet hip-width apart and legs straight, then hinge at your hips and fold your torso down toward the floor.",
+      "description": "A standing stretch that lengthens the hamstrings and lower back by folding the torso over straight legs.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/standing-forward-fold.gif",
+        "gif_type": "breathing",
+        "image": "media/standing-forward-fold-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "standing-forward-fold",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand tall with your feet hip-width apart and legs straight.",
+        "Hinge at your hips and fold your torso down toward the floor.",
+        "Let your hands and head hang toward your feet.",
+        "Hold for 20 to 30 seconds, breathing steadily."
+      ],
+      "tips": [
+        "Bend your knees slightly if your hamstrings feel tight.",
+        "Ease into the stretch slowly, never bounce."
+      ]
+    },
+    {
+      "id": "standing-quad-stretch",
+      "zone": "none",
+      "title": "Standing Quad Stretch",
+      "steps": "Stand on one leg, holding a wall for balance if needed, then bend the other knee and grab that ankle behind you.",
+      "description": "A standing balance stretch that lengthens the quadriceps by pulling the heel toward the glute.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/standing-quad-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/standing-quad-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "standing-quad-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Stand on one leg, holding a wall for balance if needed.",
+        "Bend the other knee and grab that ankle behind you.",
+        "Pull the heel toward your glute, keeping knees together.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Tuck your pelvis under to deepen the stretch.",
+        "Keep your knees close together throughout."
+      ]
+    },
+    {
+      "id": "standing-calf-stretch",
+      "zone": "none",
+      "title": "Standing Calf Stretch",
+      "steps": "Step one foot back into a staggered stance, then keep the back leg straight and the heel pressed down.",
+      "description": "A staggered-stance stretch that lengthens the calf by pressing the rear heel down with the back leg straight.",
+      "difficulty": "beginner",
+      "is_bodyweight": true,
+      "equipment": "none",
+      "media": {
+        "gif": "media/standing-calf-stretch.gif",
+        "gif_type": "breathing",
+        "image": "media/standing-calf-stretch-main.webp",
+        "image_start": null,
+        "image_peak": null
+      },
+      "app_registered_as": null,
+      "source": "RepDB",
+      "source_id": "standing-calf-stretch",
+      "source_url": "https://repdb.co",
+      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
+      "attribution": "Exercise data by RepDB (repdb.co)",
+      "instructions": [
+        "Step one foot back into a staggered stance.",
+        "Keep the back leg straight and the heel pressed down.",
+        "Bend the front knee and lean your weight forward.",
+        "Hold for 20 to 30 seconds, breathing steadily.",
+        "Switch sides and repeat."
+      ],
+      "tips": [
+        "Keep the rear heel flat and toes pointing forward.",
+        "Bend the rear knee slightly to target the lower calf."
+      ]
+    }
+  ]
+}

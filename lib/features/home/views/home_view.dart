@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../auth/models/auth_exception.dart';
+import '../../break/models/break_args.dart';
+import '../../break/models/break_source.dart';
+import '../../notifications/view_models/has_unread_notifications_view_model.dart';
 import '../models/user_stats.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/breaks_today_card.dart';
 import '../widgets/camarometro_card.dart';
+import '../widgets/notifications_bell.dart';
 import '../widgets/spine_streak_card.dart';
 
 /// Home: the logged-in user's streak, Camarómetro and today's breaks.
@@ -18,6 +22,7 @@ class HomeView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
+    final hasUnread = ref.watch(hasUnreadNotificationsProvider).value ?? false;
 
     // A rejected token means the session is over, wherever it was rejected.
     ref.listen(homeViewModelProvider, (_, next) {
@@ -31,6 +36,15 @@ class HomeView extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('MoveWell'),
         actions: [
+          NotificationsBell(
+            hasUnread: hasUnread,
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(AppRoutes.settings),
+          ),
           IconButton(
             tooltip: 'Log out',
             icon: const Icon(Icons.logout),
@@ -83,8 +97,8 @@ class _HomeContent extends StatelessWidget {
         BreaksTodayCard(breaksToday: stats.breaksToday),
         const SizedBox(height: 32),
         FilledButton.icon(
-          // TODO: open the break screen once that feature exists.
-          onPressed: () {},
+          onPressed: () =>
+              context.push(const BreakArgs(source: BreakSource.home).location),
           icon: const Icon(Icons.accessibility_new),
           label: const Text('Take a break now'),
         ),

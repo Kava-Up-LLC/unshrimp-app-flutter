@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../view_models/log_in_view_model.dart';
-import '../widgets/auth_error_banner.dart';
-import '../widgets/auth_submit_button.dart';
+import '../../shared/widgets/error_banner.dart';
+import '../../shared/widgets/submit_button.dart';
 
 class LogInView extends ConsumerWidget {
   const LogInView({super.key});
@@ -59,10 +59,10 @@ class LogInView extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             if (state.errorMessage case final message?) ...[
-              AuthErrorBanner(message: message),
+              ErrorBanner(message: message),
               const SizedBox(height: 16),
             ],
-            AuthSubmitButton(
+            SubmitButton(
               label: 'Log In',
               isLoading: state.isLoading,
               onPressed: viewModel.submit,

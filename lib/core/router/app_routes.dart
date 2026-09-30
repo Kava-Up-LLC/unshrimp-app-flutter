@@ -5,5 +5,11 @@ class AppRoutes {
   static const splash = '/splash';
   static const logIn = '/login';
   static const signUp = '/sign-up';
+  static const onboarding = '/onboarding';
   static const home = '/';
+  static const breakTime = '/break';
+  static const notifications = '/notifications';
+  static const reminderPermission = '/reminders/permission';
+  static const settings = '/settings';
+  static const changePassword = '/settings/change-password';
 }

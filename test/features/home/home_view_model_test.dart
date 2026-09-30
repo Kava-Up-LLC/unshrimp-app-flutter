@@ -4,15 +4,24 @@ import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
 import 'package:move_well_app/features/home/view_models/home_view_model.dart';
+import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
 import '../auth/fakes.dart';
+import '../reminders/fakes.dart';
 import 'fakes.dart';
 
-ProviderContainer _container(FakeHomeRepository repo, FakeTokenStorage store) {
+ProviderContainer _container(
+  FakeHomeRepository repo,
+  FakeTokenStorage store, [
+  FakeReminderScheduler? scheduler,
+]) {
   final container = ProviderContainer(
     overrides: [
       homeRepositoryProvider.overrideWithValue(repo),
       tokenStorageProvider.overrideWithValue(store),
+      reminderSchedulerProvider.overrideWithValue(
+        scheduler ?? FakeReminderScheduler(),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -50,13 +59,15 @@ void main() {
     expect(repo.calls, 0);
   });
 
-  test('logOut clears the stored token', () async {
+  test('logOut cancels the reminders and clears the stored token', () async {
     final store = FakeTokenStorage('t');
-    final container = _container(FakeHomeRepository(), store);
+    final scheduler = FakeReminderScheduler();
+    final container = _container(FakeHomeRepository(), store, scheduler);
     await container.read(homeViewModelProvider.future);
 
     await container.read(homeViewModelProvider.notifier).logOut();
 
     expect(store.token, isNull);
+    expect(scheduler.cancelCalls, 1);
   });
 }

@@ -5,9 +5,13 @@ import 'package:move_well_app/core/config/move_well_app.dart';
 import 'package:move_well_app/features/auth/repositories/auth_repository.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
+import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
 import 'features/auth/fakes.dart';
 import 'features/home/fakes.dart';
+import 'features/reminders/fakes.dart';
 
 void main() {
   testWidgets('App boots into Log In when there is no session', (
@@ -19,6 +23,9 @@ void main() {
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage()),
+          reminderNotificationsProvider.overrideWithValue(
+            FakeReminderNotifications(),
+          ),
         ],
         child: const MoveWellApp(),
       ),
@@ -37,6 +44,13 @@ void main() {
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
+          reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
+          reminderNotificationsProvider.overrideWithValue(
+            FakeReminderNotifications(),
+          ),
+          reminderPreferencesProvider.overrideWithValue(
+            FakeReminderPreferences(asked: true),
+          ),
         ],
         child: const MoveWellApp(),
       ),
@@ -48,5 +62,37 @@ void main() {
     expect(find.text('3/5'), findsOneWidget);
     expect(find.text('2 breaks'), findsOneWidget);
     expect(find.text('Take a break now'), findsOneWidget);
+  });
+
+  testWidgets('First time into Home explains notifications first', (
+    WidgetTester tester,
+  ) async {
+    final scheduler = FakeReminderScheduler();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
+          tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
+          reminderSchedulerProvider.overrideWithValue(scheduler),
+          reminderNotificationsProvider.overrideWithValue(
+            FakeReminderNotifications(),
+          ),
+          reminderPreferencesProvider.overrideWithValue(
+            FakeReminderPreferences(),
+          ),
+        ],
+        child: const MoveWellApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Let MoveWell nag you'), findsOneWidget);
+
+    await tester.tap(find.text('Turn on reminders'));
+    await tester.pumpAndSettle();
+
+    expect(scheduler.enableCalls, 1);
+    expect(find.text('Hi Grace Hopper'), findsOneWidget);
   });
 }

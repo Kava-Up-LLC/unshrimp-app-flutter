@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../reminders/services/reminder_scheduler.dart';
 import '../models/auth_exception.dart';
 import '../models/log_in_state.dart';
 import '../repositories/auth_repository.dart';
@@ -35,6 +38,7 @@ class LogInViewModel extends Notifier<LogInState> {
           .read(authRepositoryProvider)
           .logIn(email: state.email.trim(), password: state.password);
       await ref.read(tokenStorageProvider).write(token);
+      unawaited(ref.read(reminderSchedulerProvider).rescheduleFromServer());
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isAuthenticated: true);
     } on AuthException catch (e) {

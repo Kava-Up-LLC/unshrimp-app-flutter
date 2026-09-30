@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Filled submit button that is disabled and shows a spinner while loading.
-class AuthSubmitButton extends StatelessWidget {
-  const AuthSubmitButton({
+/// A null [onPressed] also disables it.
+class SubmitButton extends StatelessWidget {
+  const SubmitButton({
     super.key,
     required this.label,
     required this.isLoading,
@@ -11,7 +12,7 @@ class AuthSubmitButton extends StatelessWidget {
 
   final String label;
   final bool isLoading;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

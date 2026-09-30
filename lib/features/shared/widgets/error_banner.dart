@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Inline error message shown above an auth form's submit button.
-class AuthErrorBanner extends StatelessWidget {
-  const AuthErrorBanner({super.key, required this.message});
+/// Inline error message shown above a form's submit button.
+class ErrorBanner extends StatelessWidget {
+  const ErrorBanner({super.key, required this.message});
 
   final String message;
 

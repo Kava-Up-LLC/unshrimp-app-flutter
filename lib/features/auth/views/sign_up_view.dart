@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../view_models/sign_up_view_model.dart';
-import '../widgets/auth_error_banner.dart';
-import '../widgets/auth_submit_button.dart';
+import '../../shared/widgets/error_banner.dart';
+import '../../shared/widgets/submit_button.dart';
 
 class SignUpView extends ConsumerWidget {
   const SignUpView({super.key});
@@ -19,7 +19,7 @@ class SignUpView extends ConsumerWidget {
       _,
       isAuthenticated,
     ) {
-      if (isAuthenticated) context.go(AppRoutes.home);
+      if (isAuthenticated) context.go(AppRoutes.onboarding);
     });
 
     return Scaffold(
@@ -77,10 +77,10 @@ class SignUpView extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             if (state.errorMessage case final message?) ...[
-              AuthErrorBanner(message: message),
+              ErrorBanner(message: message),
               const SizedBox(height: 16),
             ],
-            AuthSubmitButton(
+            SubmitButton(
               label: 'Create account',
               isLoading: state.isLoading,
               onPressed: viewModel.submit,

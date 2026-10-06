@@ -569,6 +569,18 @@ Then run flutter analyze and flutter test, and redo the warm-tap repro on the si
 
 # Day 4 (Episode 4) — Ignored Reminders + Posture Roast + Streak & Spine Battery
 
+> ⚠️ **Cloud Code lifecycle (learned the hard way — applies to prompts 3 and 4 below).**
+> For EVERY Cloud Code function created in this project the full lifecycle is:
+> create → deploy → wait for build `ready` → activate → **add the HTTP trigger**
+> (`set-cloud-function-trigger`, type `http`, slug = function name, enabled) → **remind the
+> user to set `AUTH_TOKEN_SECRET`** on the active version (same value as the auth functions;
+> it can't be read back, so a wrong/whitespace paste fails silently as INVALID_TOKEN) →
+> **verify with a real token via MCP** (`auth_register`/`auth_login`, then call the function —
+> it must NOT return INVALID_TOKEN). Missing trigger → the app's `CloudCode.call` fails with
+> "Something went wrong"; mismatched secret → every token is INVALID_TOKEN. Note:
+> `default_timeout_ms` (default 10000, too low for cold starts) can only be set at create
+> time or in the dashboard — there is no MCP tool to change it afterward.
+
 > State of the app (verified in code on `feature/roast-streak-engine`): Cloud Code functions already
 > called with `CloudCode.call('name', body: {'token': token, ...}).future`: auth_register, auth_login,
 > auth_validate, auth_change_password, save_onboarding, get_settings, update_settings, get_user_stats,
@@ -645,29 +657,40 @@ Do not build the Posture Roast screen or the reconciliation yet. Run flutter ana
 
 **Goal:** on launch and on resume, the app checks which reminders expired without a completed
 break and reports them ONCE. Marks `notifications.was_ignored = true` through Cloud Code.
+Lessons from prompt 3 baked in: HTTP trigger + secret via MCP + real-token check for every new
+function; `tz_offset_min` on every `register_ignore` call; the active-window rule is a feature, not a
+bug, so the UI says why nothing was counted.
 
 ```text
-Now make the app notice the reminders I ignored. Add a reconciliation step that runs when the app launches and when it comes back to the foreground:
+Now make the app notice the reminders I ignored. Add a reconciliation step that runs when the app launches and when it comes back to the foreground.
 
-1) Add a Cloud Code function get_pending_reminders({token}) that returns this user's notifications rows with read = false and was_ignored = null (id, reminder_key, sent_at), and a function mark_ignored({token, ids}) that sets was_ignored = true on those rows for this user only. Node built-ins only, same token handling as the other functions, deploy -> wait -> activate.
-2) In the app (lib/features/notifications/ or a new lib/features/reconcile/), on launch/resume: fetch the pending rows; a reminder is "expired" when now > sent_at + grace_window_min (from get_settings) and it was sent inside the active window. If there are N expired rows, call register_ignore with count N, then mark_ignored with their ids, then refetch get_user_stats so Home updates. If N is 0 do nothing. Never call register_ignore for rows already marked, so reopening the app does not count twice.
-3) Add a debug action in Settings, "Reconcile now (debug)", behind kDebugMode, that runs the same reconciliation but treats every pending row as expired, so I can demo it without waiting for the grace window.
+1) Cloud Code. Add get_pending_reminders({token}) that returns this user's notifications rows with read = false and was_ignored IS NULL (id, reminder_key, sent_at), and mark_ignored({token, ids}) that sets was_ignored = true on those rows for this user only (notifications.id is the primary key). Node built-ins only, same readToken helper as register_ignore. For EACH function follow the full lifecycle: create -> deploy -> wait until ready -> activate -> add the HTTP trigger (slug = function name, enabled) -> set AUTH_TOKEN_SECRET with set-cloud-function-env marked secret, same value register_ignore has (ask me for it if you don't have it; never write it to a file, log, test or commit) -> verify with a fresh throwaway user and a real token via the MCP, then delete that user. Show me the final state (active, trigger, env set, verified).
 
-Keep Riverpod + MVVM, no setState, tests for the expired-row rule and for the "never twice" rule. Run flutter analyze and flutter test. Then run the app: I have 3 untouched reminders in the Center; I'll tap "Reconcile now (debug)" and we watch user_stats go to ignored_count 3, roast_level 3, roast_pending true, Spine Battery at 40%, and the three notifications rows flip to was_ignored = true. Then I'll reopen the app to prove it does not count again. Tell me your plan before changing anything, and wait for my OK.
+2) App. In lib/features/reconcile/ (Riverpod + MVVM, no setState): on launch and on resume, fetch the pending rows. A reminder is "expired" when now > sent_at + grace_window_min (from get_settings) and it was sent inside the user's active window, both computed in the DEVICE's local time. If there are N expired rows: call register_ignore with count N and tz_offset_min (DateTime.now().timeZoneOffset.inMinutes, like the debug action already does), then mark_ignored with their ids, then apply the returned user_stats to Home (applyStats) so the Spine Battery updates. If N is 0 do nothing. Never call register_ignore for rows already marked, so reopening the app does not count twice. If register_ignore returns ignored: 0 (outside active hours or paused), still mark nothing and surface the reason in debug output; that is the business rule, not an error.
+
+3) Settings debug. Add "Reconcile now (debug)" behind kDebugMode, next to "Register ignore (debug)": it runs the same reconciliation but treats every pending row as expired, so I can demo it without waiting for the grace window. Both debug actions' SnackBars must show the Spine Battery percent ("ignored 3, battery 40%"), not "roast x/5". When register_ignore comes back with ignored: 0, the SnackBar says "Not counted: outside active hours or reminders paused".
+
+Tests: the expired-row rule (inside/outside window, before/after grace), the "never twice" rule, and that tz_offset_min is sent. Run flutter analyze and flutter test.
+
+Demo setup, before you run the app: my test user must have roast_threshold = 3 (tone "direct"); check get_settings and tell me if it is not, so I change the tone in Settings first. The active window is already widened for recording. I have 3 untouched reminders in the Center. Then I tap "Reconcile now (debug)" and we watch user_stats go to ignored_count 3, roast_level 3, roast_pending true, Spine Battery 40%, and the three notifications rows flip to was_ignored = true. Then I reopen the app to prove it does not count again. Tell me your plan before changing anything, and wait for my OK.
 ```
 
 ## 5. The Posture Roast and the way back  ·  on-camera prompt 3
 
 **Goal:** full-screen punishment when `roast_pending` is true, with the roast text living in Remote
-Config, and the break from there clearing everything.
+Config, and the break from there clearing everything. No new Cloud Code function; `register_break`
+already runs on "Survived" since prompt 3.
 
 ```text
-Build the Posture Roast. When get_user_stats returns roast_pending = true, the app shows a full-screen roast BEFORE Home (on launch and after the reconciliation), in lib/features/roast/:
+Build the Posture Roast. When get_user_stats returns roast_pending = true, the app shows a full-screen roast BEFORE Home, on launch and right after a reconciliation that sets it, in lib/features/roast/ (Riverpod + MVVM + go_router, no setState):
 
-- Coral background, the shrimp art from assets/images, a big roast line, the Spine Battery at its current charge, and two buttons: "Fix my posture" (primary) and "Share my shame" (secondary, opens the OS share sheet with the roast line and "Unshrimp").
-- The roast lines come from AppAmbit Remote Config key roast_lines (a JSON array of strings). Create that key in the dashboard with these three lines: "Three reminders ignored. Your chair has officially adopted you." / "You had one job: stand up. The shrimp won." / "Museum skeletons are laughing at you right now." Pick one at random per roast. Cache the last fetched array like sarcasm_pack so the roast still shows offline; fall back to the first line if nothing is cached.
-- "Fix my posture" opens the 60s break for the user's pain_zone (source: roast). Completing it calls register_break as usual; since that function already sets roast_pending = false and ignored_count = 0, just refetch get_user_stats and go to Home. Leaving the break early keeps roast_pending true, so the roast shows again next launch.
+- Coral background (colorScheme.secondary), the shrimp art from assets/images, one big roast line, the Spine Battery card at its current charge (percent, same widget as Home), and two buttons: "Fix my posture" (primary) and "Share my shame" (secondary, OS share sheet with the roast line followed by " — Unshrimp").
+- Roast lines come from AppAmbit Remote Config key roast_lines, a JSON array of strings. Create the key with the appambit MCP if it has a Remote Config tool; if not, give me the exact key name and JSON to paste in the dashboard and wait. Seed these three lines: "Three reminders ignored. Your chair has officially adopted you." / "You had one job: stand up. The shrimp won." / "Museum skeletons are laughing at you right now." Pick one at random per roast. Cache the last fetched array the same way sarcasm_pack is cached so the roast still shows offline; fall back to the first line if nothing is cached.
+- "Fix my posture" opens the existing 60s break for the user's pain_zone with source = roast (Start, 3-2-1, 60s, Survived). Survived already calls register_break and applies the returned stats; since that function sets roast_pending = false and ignored_count = 0, just go to Home afterwards. Leaving the break early keeps roast_pending true, so the roast shows again on next launch. No pause button, no way to dismiss the roast without the break (back gesture returns to the roast).
+- Routing: a redirect in app_router.dart sends to the roast whenever the current user_stats has roast_pending = true, and back to Home when it is false. Make sure the redirect reads the stats the reconciliation just applied, not a stale copy.
 - Track roast_shown and roast_shared in Analytics.
 
-Riverpod + MVVM + go_router (a redirect in app_router.dart when roast_pending is true), no setState, tests for the redirect and the random line. Run flutter analyze and flutter test. Then run the app: I'll open it with roast_pending true, we see the roast, I tap Fix my posture, Start, 3-2-1, survive, and we watch user_stats go ignored_count 0, roast_pending false, roast_level 2, breaks_today 1, with Spine Battery back to 60%. Tell me your plan before changing anything, and wait for my OK.
+Tests: redirect on/off by roast_pending, random line from the cached array, fallback line when cache is empty. Run flutter analyze and flutter test.
+
+Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I relaunch the app, we see the roast, I tap "Share my shame" to show the sheet and cancel, then "Fix my posture", Start, 3-2-1, survive, and we watch user_stats go to ignored_count 0, roast_pending false, roast_level 2, breaks_today +1, with Home back at 60%. Then I change one roast line in Remote Config and force another roast to show the new text with no rebuild. Tell me your plan before changing anything, and wait for my OK.
 ```

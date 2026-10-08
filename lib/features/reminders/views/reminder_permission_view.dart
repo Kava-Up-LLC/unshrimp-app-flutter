@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
+import '../../shared/widgets/submit_button.dart';
 import '../view_models/reminder_permission_view_model.dart';
 
 /// Shown once before Home: explains why MoveWell needs notifications, then
@@ -53,9 +54,10 @@ class ReminderPermissionView extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              FilledButton(
-                onPressed: state.isBusy ? null : viewModel.allow,
-                child: const Text('Turn on reminders'),
+              SubmitButton(
+                label: 'Turn on reminders',
+                isLoading: state.isBusy,
+                onPressed: viewModel.allow,
               ),
               const SizedBox(height: 8),
               TextButton(

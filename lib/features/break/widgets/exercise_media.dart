@@ -33,6 +33,12 @@ class ExerciseMedia extends StatelessWidget {
                     exercise.mediaUrl!,
                     fit: BoxFit.contain,
                     errorBuilder: (_, _, _) => bundled,
+                    // Show progress while the CMS media downloads instead of a
+                    // blank frame that looks broken.
+                    loadingBuilder: (context, child, progress) =>
+                        progress == null
+                        ? child
+                        : const Center(child: CircularProgressIndicator()),
                   )
                 : bundled,
           ),

@@ -17,7 +17,7 @@ class RoastView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final line = ref.watch(roastViewModelProvider).value ?? '';
+    final line = ref.watch(roastViewModelProvider).value;
     final roastLevel = ref.watch(roastGateProvider).roastLevel;
 
     return PopScope(
@@ -46,15 +46,29 @@ class RoastView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-                Text(
-                  line,
-                  textAlign: TextAlign.center,
-                  // White passes AA on coralContainerDark (#7A2A18, ~9.67:1).
-                  style: textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                // While the roast line resolves (first load pulls it from the
+                // CMS), show a spinner rather than an empty headline.
+                if (line == null || line.isEmpty)
+                  const Center(
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                  )
+                else
+                  Text(
+                    line,
+                    textAlign: TextAlign.center,
+                    // White passes AA on coralContainerDark (#7A2A18, ~9.67:1).
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 28),
                 SpineBatteryCard(roastLevel: roastLevel),
                 const Spacer(),

@@ -694,3 +694,287 @@ Tests: redirect on/off by roast_pending, random line from the cached array, fall
 
 Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I relaunch the app, we see the roast, I tap "Share my shame" to show the sheet and cancel, then "Fix my posture", Start, 3-2-1, survive, and we watch user_stats go to ignored_count 0, roast_pending false, roast_level 2, breaks_today +1, with Home back at 60%. Then I change one roast line in Remote Config and force another roast to show the new text with no rebuild. Tell me your plan before changing anything, and wait for my OK.
 ```
+---
+
+# Day 5 (Episode 5) — Offline First, the Integration Pass and the Agent (MCP)
+
+> ⚠️ **Cloud Code lifecycle (same as episode 4 — applies to prompts 3 and 4 below).**
+> For EVERY new Cloud Code function: create → deploy → wait for build `ready` → activate →
+> **add the HTTP trigger** (`set-cloud-function-trigger`, type `http`, slug = function name,
+> enabled) → **remind me to set `AUTH_TOKEN_SECRET`** on the active version (same value as the
+> auth functions; it cannot be read back, so a wrong or whitespace paste fails silently as
+> INVALID_TOKEN) → **verify with a real token via MCP** (`auth_login`, then call the function —
+> it must NOT return INVALID_TOKEN). Missing trigger → the app's `CloudCode.call` fails with
+> "Something went wrong"; mismatched secret → every token is INVALID_TOKEN. `default_timeout_ms`
+> can only be set at create time or in the dashboard.
+
+> ⚠️ **This episode has no provoked crash.** Crash Reporting gets wired correctly and is
+> mentioned, but nothing is crashed on purpose. Do not add a "test crash" button and do not
+> suggest one.
+
+> **State of the app (verified in code on `feature/ignored-reminders-roast-streak`).**
+> 15 Cloud Code functions are called today: auth_register, auth_login, auth_validate,
+> auth_change_password, save_onboarding, get_settings, update_settings, get_user_stats,
+> register_break, register_ignore, get_pending_reminders, mark_ignored, log_notifications,
+> get_notifications, mark_notification_read. Six of them have local sources in
+> `cloud_functions/`; the other nine exist only in the AppAmbit dashboard. Every repository goes
+> through `lib/core/cloud/cloud_functions.dart`, which retries exactly once on a transient
+> `http`/`timedOut` error but ONLY for idempotent reads, never for mutations.
+> **There is no read cache and no write queue anywhere in the project.** `shared_preferences` is
+> already a dependency and is used in exactly two places (`delivery_log.dart`,
+> `reminder_preferences.dart`); there is no sqflite/hive/drift and no connectivity plugin. The
+> hardcoded `fallback_*` files are generic seed content, not "the last thing the user saw".
+> `AppBootstrap.run()` starts the SDK and nothing installs `FlutterError.onError`,
+> `PlatformDispatcher.instance.onError` or a `runZonedGuarded`, so framework and async errors
+> are not routed anywhere today. The reminder scheduler uses
+> `AndroidScheduleMode.inexactAllowWhileIdle`, which is the Play-policy-safe choice and must
+> stay that way: do NOT switch to exact alarms and do NOT add `USE_EXACT_ALARM`.
+> **Context that shapes the design:** the app is being prepared for Google Play, and episode 6
+> adds subscriptions (14-day Pro trial, then limited Free). Where a decision now would be
+> expensive to undo after purchases exist, prompts 1 and 2 say so explicitly. Run in order: #1 is
+> prep (before recording); #2 to #6 are the on-camera prompts the shooting script labels PROMPT 1
+> to PROMPT 5. Always say "episode", never "day", in anything that ends up on screen.
+
+---
+
+## 1. Loose ends sweep  ·  PREP (run before recording)
+
+**Goal:** finish what is already half-built, before the episode adds anything new. Six
+independent blocks. Nothing here is a new feature.
+
+Read CLAUDE.md and DESIGN.md first. Nothing is decided on the phone: any counting or state
+change goes through Cloud Code. Cloud Code has no npm packages, no cron and no outbound HTTP.
+Keep the frozen names in PLAN.md 1.2. Run `flutter analyze` and `flutter test` after each block
+and keep them green. Commit each block separately. Tell me your plan before changing anything,
+and wait for my OK.
+
+**Block 1 — Atomic reconciliation (bug, highest priority).**
+`ReconcileViewModel` calls `register_ignore` and then `mark_ignored` as two separate Cloud Code
+calls. If the app dies, is backgrounded or loses the network between them, the counter has
+already been raised but the rows are not marked, so the next reconciliation fetches the same
+rows and counts them again: `roast_level` rises twice and the Posture Roast can fire twice for
+the same ignored reminder. `register_ignore` is deliberately non-retryable, so there is no
+safety net. Replace both calls with one new Cloud Code function
+`reconcile_ignored(token, ids, tz_offset_min)` that, in a single transaction, marks those rows
+`was_ignored` and applies the ignore count, returning the updated stats row plus how many were
+actually counted. Keep the active-window and `paused_until` rules exactly as `register_ignore`
+has them today. Write the source to `cloud_functions/reconcile_ignored.mjs` with unit tests for
+the window helpers, and add a test proving a repeated call with the same ids is a no-op.
+
+**Block 2 — Notification Center: actions on long press.**
+Today the list only opens the break. Add, revealed by a long press on a tile and not before (no
+always-visible buttons, no swipe): mark this one as read, mark every one as read, and delete
+this one. Use a selection or action sheet that a tap outside dismisses. New Cloud Code
+functions: `mark_all_notifications_read(token)` and `delete_notification(token, id)`.
+**Critical constraint:** deleting must NOT lose an un-reconciled ignore.
+`get_pending_reminders` reads rows `WHERE read = 0 AND was_ignored IS NULL`, so a hard delete of
+a still-pending row would silently cancel a punishment the user earned. Make delete a soft
+delete (a `hidden_at` column): the row stops showing in the list but `get_pending_reminders`
+keeps seeing it.
+
+**Block 3 — Notification Center: show what happened.**
+`was_ignored` is written in the database and the app never reads it. Parse it and mark those
+rows visually as ignored, in the coral side of the palette. Also: the tile parses `title` and
+never paints it, and it shows the raw `pack` value to the user ("14:05 · default"). Decide one
+readable layout: use `title` where it helps, and either drop the pack or show a human label for
+it.
+
+**Block 4 — Spine Battery.**
+The card is five flat bars and a percentage, always coral whatever the charge, so full and dead
+look identical. Give it a real battery silhouette (body plus terminal) with the five cells
+inside, and a colour that tracks the level: teal at 100 and 80, amber at 60 and 40, coral at 20,
+error red at 0. Animate the cell that goes out when the level drops, around 300 ms. DESIGN.md
+line 73 asks for a coral container and the code uses the default `Card`: follow DESIGN.md.
+
+**Block 5 — Posture Roast.**
+The backdrop is `roastTeal`, chosen so the teal shrimp icon would sit flush, and white text
+fails contrast on it (2.10:1), which is why the punishment line ended up near-black. DESIGN.md
+and `app_colors.dart` both say the Posture Roast is coral. Repaint it: background
+`AppColors.coralContainerDark` (#7A2A18), white text (9.67:1), bright coral kept for accents
+only. Do not put white text on #FF6B4A, it is 2.82:1. The mascot is `icon_foreground.png`, the
+cheerful launcher icon, while the copy tells the user off. Replace it with a hurt-shrimp asset:
+same line work and palette, hunched, eyes squeezed shut, a hand on the lower back, one sweat
+drop, silhouette still clearly the same character. Put it in `assets/images/shrimp_hurt.png` and
+stop reusing the launcher icon at runtime.
+
+**Block 6 — Text and Home.**
+There is not a single `maxLines` or `TextOverflow` in the project, so a long Remote Config line
+or a large system font overflows. Do a pass over every screen: cap and ellipsize what must not
+grow, let the rest wrap, and check each screen at the largest system text size. `BreaksTodayCard`
+shows "2 breaks" and never mentions `daily_goal`, which is the only thing the streak depends on:
+show progress against it ("2 of 5"). Home has no pull to refresh while the Notification Center
+does: add it. `assets/images` ships 2.2 MB of which only `icon_round.png` is used at runtime;
+`icon.jpeg`, `icon_foreground.png` and `icon_launcher.png` are flutter_launcher_icons sources.
+Keep them in the repo, out of the bundle. Give the remaining runtime images a `cacheWidth`
+matching the size they are actually painted at.
+
+---
+
+## 2. Offline first, part one: the app remembers what it saw  ·  on-camera prompt 1
+
+**Goal:** the app opens and shows real content with no network, instead of a spinner and an
+error. Today every remote read goes straight to Cloud Code and fails hard when there is nothing
+to reach.
+
+Build a cache layer under the existing repositories, in `lib/core/cache/`, on top of
+`shared_preferences` (already a dependency — do not add sqflite, hive or drift, and do not add a
+connectivity plugin).
+
+- One `CachedRead<T>` helper: try the Cloud Code call; on success store the raw payload and
+  return it; on a transport failure (`AuthException` with a transport code, not a function-level
+  error like INVALID_TOKEN or NO_SETTINGS) return the stored payload and mark the app offline.
+  A function-level error is a real answer from AppAmbit and must keep bubbling up as it does now.
+- Wrap these reads: `get_user_stats`, `get_settings`, `get_notifications`, the exercises, the
+  sarcasm pack and the roast lines. Leave `auth_validate` alone: a session check must not be
+  answered from a cache.
+- **Key every entry by user id**, not just by function name. A second account logging in on the
+  same device must never see the previous user's stats or notifications. Clear that user's
+  entries on log out. Namespace the keys with a schema version so a future shape change
+  invalidates cleanly instead of crashing on an old payload.
+- Render from cache immediately and revalidate in the background, so a warm start paints
+  instantly and corrects itself a moment later.
+- Add a small "Offline" indicator in the Home app bar, driven by an `isOffline` flag derived
+  from the outcome of the last call. No plugin: the network state is inferred from whether calls
+  succeed. Show the age of the data when it is stale ("as of 10:42").
+- **Reserve one slot now, for episode 6:** the cache must be able to hold an entitlement payload
+  with its own freshness policy, because episode 6 adds a 14-day Pro trial and subscriptions,
+  and a Pro user on a plane must not lose Pro. Define the slot and a grace period
+  (last known entitlement honoured for N days offline, N from Remote Config, default 7) and
+  leave it unused today. Do not build purchases, paywalls or entitlement logic in this episode.
+
+Tests: a transport failure returns the cached payload; a function-level error still throws; a
+different user id never reads another user's entry; a bumped schema version discards the old
+payload without throwing; log out clears that user's entries.
+
+Demo: I put the device in airplane mode and cold start the app. Home paints the Spine Battery,
+the streak and Breaks today from cache with the Offline chip showing, and the Notification Center
+still lists its history, instead of the error screen we get today. Tell me your plan before
+changing anything, and wait for my OK.
+
+---
+
+## 3. Offline first, part two: nothing the user earned gets lost  ·  on-camera prompt 2
+
+**Goal:** this is the one that matters. Today a completed 60-second break calls
+`register_break` and, with no network, throws: the user did the exercise, held the minute, and
+the streak never counts it. The same goes for a reconciliation that cannot reach AppAmbit.
+
+Build an outbox in `lib/core/outbox/`, on `shared_preferences`.
+
+- A queued operation holds: a client-generated `op_id` (uuid v4, created when the user acts, NOT
+  when the flush runs), the function name, its body, the user id and a created-at timestamp.
+  Persist the queue so it survives a kill and a reboot.
+- Queue, rather than throw, when a mutation hits a transport failure: `register_break` and
+  `reconcile_ignored`. Leave auth, `update_settings` and `auth_change_password` out of the
+  outbox: those must stay interactive and tell the user they failed.
+- Flush in order, one at a time, on app resume and after any successful call. Stop at the first
+  transport failure and keep the rest queued. Drop an operation only on a function-level error
+  that will never succeed (INVALID_TOKEN), and surface that as a session end.
+- **Server-side idempotency, and get this right because episode 6 depends on it.** Add an
+  `op_id` parameter to `register_break` and `reconcile_ignored`, and a table
+  `applied_ops(op_id PRIMARY KEY, user_id, function, applied_at)`. Inside the same transaction,
+  insert the `op_id` first; if that insert conflicts, skip the mutation entirely and return the
+  current stats row unchanged. That makes a replayed flush harmless. Episode 6 will reuse this
+  exact mechanism for `grant_entitlement`, where a double-applied purchase is a real problem, so
+  build it as a shared helper rather than copy-pasted into each function.
+- While something is queued, the UI must not lie. Show the user their break counted, with a
+  "waiting to sync" marker on the affected Home card, and reconcile the display when the flush
+  lands. Never show a streak increase the cloud has not confirmed: `current_streak` only changes
+  on a real response.
+- Update the local sources in `cloud_functions/` for every function you touch.
+
+Tests: a queued op survives a restart; a flush is ordered; a second flush of the same `op_id`
+leaves the stats row untouched; a function-level error drops the op; the streak never advances
+from a queued-only break.
+
+Demo: airplane mode on. I open a break, tap Start, 3-2-1, hold the 60 seconds, tap Survived. The
+app says it counted and shows "waiting to sync"; the `user_stats` row in the dashboard does not
+move. I turn the network back on, the app flushes, and the row moves once: `breaks_today +1`,
+`ignored_count 0`, `roast_level` down a step. Then I force the same flush twice to prove the row
+does not move a second time. Tell me your plan before changing anything, and wait for my OK.
+
+---
+
+## 4. The integration pass: the race, and nothing swallowed  ·  on-camera prompt 3
+
+**Goal:** harden what the week built, and make sure a real failure is visible instead of silent.
+No new features, no provoked crash.
+
+- **The `roast_pending` race.** Review every path that reads `user_stats`, decides, and writes
+  back. `register_ignore` and `register_break` must set and clear `roast_pending` inside the same
+  transaction that moves the counters, never by a read-then-write from a second call. The roast
+  redirect in `app_router.dart` must read the stats the reconciliation just applied, not a stale
+  copy. Prove it with a test that interleaves a reconciliation and a completed break.
+- **Nothing routed nowhere.** `AppBootstrap.run()` installs no error handlers, so framework and
+  async errors go nowhere today. Install `FlutterError.onError` and
+  `PlatformDispatcher.instance.onError` and route them to AppAmbit Crash Reporting. Check
+  whether the SDK already installs its own handlers and do not double-report if it does: tell me
+  what you find before wiring anything.
+- **The 17 `catch (_)` blocks.** Audit each one. A fallback that is the designed behaviour
+  (Remote Config missing, notifications unavailable) stays, but logs. Anything that is hiding a
+  real failure stops hiding it. List what you changed and why.
+- **The copy contradiction.** Three user-facing strings say "server": "Couldn't reach the
+  server…", "Unexpected response from the server.", "The server did not return a session token."
+  The whole pitch of this backend is that there is no server of your own. Rewrite them to say
+  the app could not reach AppAmbit, or simply talk about the connection.
+- **Walk the whole loop** with the outbox and the cache in place: sign up, onboarding, a
+  reminder, a completed break, an ignored one, the reconciliation, the roast, the streak. Fix
+  what breaks. Report anything you had to change outside the files above.
+- **Android reliability note, not a code change:** reminders use inexact alarms, so under Doze
+  they can arrive late. Check whether `grace_window_min` handling tolerates a reminder arriving
+  well after its slot, and tell me if it does not. Do not switch to exact alarms.
+
+Tests: the interleaving test above, plus coverage for whatever the audit changes. Run
+`flutter analyze` and `flutter test`.
+
+Demo: Crash Reporting shows the release build reporting in with zero crashes, and I walk the
+loop end to end on a device while the dashboard follows along. Tell me your plan before changing
+anything, and wait for my OK.
+
+---
+
+## 5. The kill switch: gate a shipped build with no release  ·  on-camera prompt 4
+
+**Goal:** once the app is on Google Play you cannot un-ship a build. A version gate driven from
+Remote Config means a broken release can be stopped without waiting for a review.
+
+- Read `min_supported_version` from AppAmbit Remote Config at start (the config fetch already
+  happens in `AppBootstrap` via `enableConfig()`).
+- Compare it against the running version. Use `package_info_plus` for that; it is the one new
+  dependency this episode adds and it is the standard way. Say so in your plan.
+- When the running version is below the minimum, show a blocking update screen before anything
+  else, in the app's voice, with a button to the store listing. No way around it.
+- Default to permissive: if the key is missing, unreadable or the fetch failed, the app runs
+  normally. A failed config fetch must never lock a user out of the app.
+- Keep it one screen and one comparison. This is a small beat, not a feature.
+
+Tests: below the minimum blocks; equal or above runs; missing or malformed key runs; a failed
+fetch runs.
+
+Demo: the app runs normally. I set `min_supported_version` in the dashboard above the installed
+version, cold start, and the update wall appears. I set it back and the app runs again. No
+rebuild, no release. Tell me your plan before changing anything, and wait for my OK.
+
+---
+
+## 6. Talk to the backend: the AppAmbit MCP  ·  on-camera prompt 5
+
+**Goal:** the closing moment of the series. The backend is operated by natural language, and the
+effect lands on the phone.
+
+Using the `appambit` MCP tools against the "MoveWell App" application, and reporting each step
+as you go:
+
+- Read the current `sarcasm_pack` and `roast_lines` values from Remote Config and show them to
+  me.
+- Change the active `sarcasm_pack` to a different pack, and replace one line of `roast_lines`
+  with a new one you write in the app's voice (posture and laziness, absurd comparisons, never
+  body, weight or real health, no strong profanity).
+- Read back the `user_stats` row for my test user and tell me its current values in plain
+  language.
+- Do not touch anything else. No schema changes, no deletes, no edits to any other row, and
+  nothing involving secrets or keys.
+
+Demo: I ask for each change in plain language, you make it through the MCP, and the next
+reminder and the next roast come out with the new text on the phone with no rebuild and no
+release. Tell me what you are about to change before each step, and wait for my OK.

@@ -75,53 +75,48 @@ void main() {
         _pending(2),
         _pending(3),
       ]);
-      final home = FakeHomeRepository();
-      final c = _container(reconcile, home: home);
+      final c = _container(reconcile);
 
       final outcome = await c.read(reconcileViewModelProvider).run(forceAll: true);
 
       expect(outcome.status, ReconcileStatus.counted);
       expect(outcome.ignored, 3);
-      expect(home.ignoreCalls, 1);
-      expect(home.lastIgnoreCount, 3);
-      expect(home.lastTzOffsetMin, DateTime.now().timeZoneOffset.inMinutes);
-      expect(reconcile.markedIds.single, [1, 2, 3]);
+      expect(reconcile.reconcileCalls, 1);
+      expect(reconcile.lastTzOffsetMin, DateTime.now().timeZoneOffset.inMinutes);
+      expect(reconcile.reconciledIds.single, [1, 2, 3]);
     });
 
     test('does not count the same rows twice across runs', () async {
       final reconcile = FakeReconcileRepository([_pending(1), _pending(2)]);
-      final home = FakeHomeRepository();
-      final c = _container(reconcile, home: home);
+      final c = _container(reconcile);
       final vm = c.read(reconcileViewModelProvider);
 
       await vm.run(forceAll: true);
       final second = await vm.run(forceAll: true);
 
       expect(second.status, ReconcileStatus.nothingPending);
-      expect(home.ignoreCalls, 1); // not called the second time
+      expect(reconcile.reconcileCalls, 1); // not called the second time
     });
 
-    test('outside active hours (ignored: 0) marks nothing', () async {
-      final reconcile = FakeReconcileRepository([_pending(1), _pending(2)]);
-      final home = FakeHomeRepository(ignoredResult: 0);
-      final c = _container(reconcile, home: home);
+    test('outside active hours (counted: 0) marks nothing', () async {
+      final reconcile = FakeReconcileRepository([_pending(1), _pending(2)], 0);
+      final c = _container(reconcile);
 
       final outcome = await c.read(reconcileViewModelProvider).run(forceAll: true);
 
       expect(outcome.status, ReconcileStatus.notCounted);
-      expect(home.ignoreCalls, 1);
-      expect(reconcile.markedIds, isEmpty);
+      expect(reconcile.reconcileCalls, 1);
+      expect(reconcile.reconciledIds, isEmpty);
     });
 
     test('nothing pending does nothing', () async {
       final reconcile = FakeReconcileRepository(const []);
-      final home = FakeHomeRepository();
-      final c = _container(reconcile, home: home);
+      final c = _container(reconcile);
 
       final outcome = await c.read(reconcileViewModelProvider).run(forceAll: true);
 
       expect(outcome.status, ReconcileStatus.nothingPending);
-      expect(home.ignoreCalls, 0);
+      expect(reconcile.reconcileCalls, 0);
     });
   });
 }

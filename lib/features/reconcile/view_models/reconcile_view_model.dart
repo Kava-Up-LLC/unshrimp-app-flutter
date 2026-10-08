@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/repositories/token_storage.dart';
-import '../../home/repositories/home_repository.dart';
 import '../../home/view_models/home_view_model.dart';
 import '../../settings/repositories/settings_repository.dart';
 import '../models/pending_reminder.dart';
@@ -70,21 +69,21 @@ class ReconcileViewModel {
     }
     if (expired.isEmpty) return const ReconcileOutcome.nothingPending();
 
-    // Count server-side; it re-checks the window/paused state at call time.
+    // One atomic, idempotent Cloud Code call marks the rows and counts them in
+    // a single transaction; it re-checks the window/paused state at call time.
+    // (Was two separate calls — register_ignore then mark_ignored — which could
+    // double-count if the app died between them.)
     final result = await ref
-        .read(homeRepositoryProvider)
-        .registerIgnore(
+        .read(reconcileRepositoryProvider)
+        .reconcileIgnored(
           token,
-          count: expired.length,
+          ids: expired.map((r) => r.id).toList(),
           tzOffsetMin: DateTime.now().timeZoneOffset.inMinutes,
         );
 
-    // Outside active hours or paused: the business rule is to mark nothing.
+    // Outside active hours or paused: the business rule is to count nothing.
     if (result.ignored == 0) return const ReconcileOutcome.notCounted();
 
-    await ref
-        .read(reconcileRepositoryProvider)
-        .markIgnored(token, expired.map((r) => r.id).toList());
     if (ref.exists(homeViewModelProvider)) {
       ref.read(homeViewModelProvider.notifier).applyStats(result.stats);
     }

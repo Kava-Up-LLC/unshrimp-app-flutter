@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cloud/cloud_functions.dart';
+import '../../home/models/ignore_result.dart';
+import '../../home/models/user_stats.dart';
 import '../models/pending_reminder.dart';
 
-/// Reads the user's un-reconciled reminders and marks them ignored, through the
-/// `get_pending_reminders` and `mark_ignored` Cloud Code functions.
+/// Reads the user's un-reconciled reminders and counts them ignored, through the
+/// `get_pending_reminders` and `reconcile_ignored` Cloud Code functions.
 class ReconcileRepository {
   const ReconcileRepository([this._cloud = const CloudFunctions()]);
 
@@ -26,10 +28,27 @@ class ReconcileRepository {
         .toList();
   }
 
-  /// Marks the given rows `was_ignored`. Returns how many were updated.
-  Future<int> markIgnored(String token, List<int> ids) async {
-    final data = await _cloud.call('mark_ignored', {'token': token, 'ids': ids});
-    return (data['marked'] as num?)?.toInt() ?? 0;
+  /// `reconcile_ignored`: in one server-side transaction, marks the given rows
+  /// `was_ignored` and raises the ignore count by however many were still
+  /// pending, returning the updated stats row plus how many were actually
+  /// counted (0 when outside the active window or paused). [tzOffsetMin] is the
+  /// device's UTC offset so the server can test the window against the user's
+  /// wall clock. The call is idempotent — already-marked rows count for nothing
+  /// — so it is the one mutation safe to [retry] on a transient failure.
+  Future<IgnoreResult> reconcileIgnored(
+    String token, {
+    required List<int> ids,
+    required int tzOffsetMin,
+  }) async {
+    final data = await _cloud.call('reconcile_ignored', {
+      'token': token,
+      'ids': ids,
+      'tz_offset_min': tzOffsetMin,
+    }, retry: true);
+    return IgnoreResult(
+      ignored: (data['counted'] as num?)?.toInt() ?? 0,
+      stats: UserStats.fromJson(data),
+    );
   }
 }
 

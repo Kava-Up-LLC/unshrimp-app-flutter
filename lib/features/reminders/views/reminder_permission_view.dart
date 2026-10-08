@@ -36,7 +36,7 @@ class ReminderPermissionView extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Let MoveWell nag you',
+                'Let Unshrimp nag you',
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,

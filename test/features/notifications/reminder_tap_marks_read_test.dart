@@ -15,6 +15,7 @@ import 'package:move_well_app/features/notifications/models/app_notification.dar
 import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
 import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
 import 'package:move_well_app/features/reminders/models/reminder_payload.dart';
+import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
@@ -23,6 +24,7 @@ import 'package:move_well_app/features/settings/repositories/settings_repository
 import '../auth/fakes.dart';
 import '../break/fakes.dart';
 import '../home/fakes.dart';
+import '../reconcile/fakes.dart';
 import '../reminders/fakes.dart';
 import '../settings/fakes.dart';
 import 'fakes.dart';
@@ -30,7 +32,7 @@ import 'fakes.dart';
 AppNotification _row(int id, String key, {bool read = false}) =>
     AppNotification(
       id: id,
-      title: 'MoveWell',
+      title: 'Unshrimp',
       body: 'Line $id',
       pack: 'default',
       sentAt: DateTime.utc(2026, 9, 29, 9 + id),
@@ -56,6 +58,7 @@ Future<FakeReminderNotifications> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
         authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
         homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
         tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),

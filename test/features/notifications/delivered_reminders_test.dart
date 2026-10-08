@@ -23,7 +23,7 @@ List<String> _shown(
     schedule: schedule,
     since: since,
     now: now,
-    title: 'MoveWell',
+    title: 'Unshrimp',
   ))
     '${r.sentAt.day} ${r.sentAt.hour}:00 ${r.body}',
 ];
@@ -84,7 +84,7 @@ void main() {
       schedule: [once],
       since: null,
       now: DateTime(2026, 9, 29, 8, 1),
-      title: 'MoveWell',
+      title: 'Unshrimp',
     ).single;
     expect(shown.pack, 'halloween');
     expect(shown.sentAt, once.at);
@@ -95,7 +95,7 @@ void main() {
       schedule: [for (var h = 9; h <= 18; h++) _daily(h)],
       since: null,
       now: DateTime(2026, 10, 29),
-      title: 'MoveWell',
+      title: 'Unshrimp',
     );
     expect(shown, hasLength(maxDeliveredBatch));
     expect(shown.last.sentAt, DateTime(2026, 10, 28, 18));

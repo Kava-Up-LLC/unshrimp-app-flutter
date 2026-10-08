@@ -1,14 +1,14 @@
-import 'package:appambit_sdk_flutter/appambit_sdk_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cloud/cloud_functions.dart';
 import '../models/auth_exception.dart';
 
 /// Calls the AppAmbit Cloud Code auth functions. Hashing and credential checks
 /// happen server-side; this class only sends the input and parses the reply.
 class AuthRepository {
-  const AuthRepository();
+  const AuthRepository([this._cloud = const CloudFunctions()]);
 
-  static const _timeout = Duration(seconds: 20);
+  final CloudFunctions _cloud;
 
   /// Returns the session token issued by `auth_register`.
   Future<String> register({
@@ -16,11 +16,11 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final data = await _call('auth_register', {
+    final data = await _cloud.call('auth_register', {
       'name': name,
       'email': email,
       'password': password,
-    });
+    }, errorFrom: _exceptionFrom);
     return _readToken(data);
   }
 
@@ -29,55 +29,27 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final data = await _call('auth_login', {
+    final data = await _cloud.call('auth_login', {
       'email': email,
       'password': password,
-    });
+    }, errorFrom: _exceptionFrom);
     return _readToken(data);
   }
 
-  /// Whether `auth_validate` accepts [token].
+  /// Whether `auth_validate` accepts [token]. Idempotent read → may retry once.
   Future<bool> validate(String token) async {
-    final data = await _call('auth_validate', {'token': token});
+    final data = await _cloud.call(
+      'auth_validate',
+      {'token': token},
+      errorFrom: _exceptionFrom,
+      retry: true,
+    );
     return data['valid'] == true;
-  }
-
-  Future<Map<String, dynamic>> _call(
-    String function,
-    Map<String, dynamic> body,
-  ) async {
-    try {
-      final response = await CloudCode.call(
-        function,
-        body: body,
-        timeout: _timeout,
-      ).future;
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw const AuthException(
-          code: 'UNEXPECTED_RESPONSE',
-          message: 'Unexpected response from the server.',
-        );
-      }
-      final error = _exceptionFrom(data);
-      if (error != null) throw error;
-      return data;
-    } on CloudCodeError catch (e) {
-      final body = e.body;
-      final error = body is Map<String, dynamic> ? _exceptionFrom(body) : null;
-      throw error ??
-          AuthException(
-            code: e.code.name,
-            message: e.code == CloudCodeErrorCode.http
-                ? 'Something went wrong. Please try again.'
-                : "Couldn't reach the server. Check your connection and try again.",
-          );
-    }
   }
 
   /// Builds an [AuthException] when the function replied with an error body,
   /// e.g. `{ "error": "INVALID_CREDENTIALS", "message": "..." }`.
-  AuthException? _exceptionFrom(Map<String, dynamic> data) {
+  static AuthException? _exceptionFrom(Map<String, dynamic> data) {
     final code = data['error'] ?? data['code'];
     if (code == null) return null;
     return AuthException(
@@ -86,7 +58,7 @@ class AuthRepository {
     );
   }
 
-  String _readToken(Map<String, dynamic> data) {
+  static String _readToken(Map<String, dynamic> data) {
     final token = data['token'];
     if (token is! String || token.isEmpty) {
       throw const AuthException(

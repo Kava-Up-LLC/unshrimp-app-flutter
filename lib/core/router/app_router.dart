@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,15 +12,32 @@ import '../../features/notifications/views/notification_center_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/reminders/repositories/reminder_preferences.dart';
 import '../../features/reminders/views/reminder_permission_view.dart';
+import '../../features/roast/view_models/roast_gate_provider.dart';
+import '../../features/roast/views/roast_view.dart';
 import '../../features/settings/views/change_password_view.dart';
 import '../../features/settings/views/settings_view.dart';
 import 'app_routes.dart';
+import 'roast_redirect.dart';
 
 /// Single go_router instance exposed through Riverpod.
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Re-run the redirect whenever roast_pending flips (e.g. after a reconcile).
+  final refresh = ValueNotifier(false);
+  ref.listen(roastGateProvider, (_, _) => refresh.value = !refresh.value);
+  ref.onDispose(refresh.dispose);
+
   final router = GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: refresh,
+    redirect: (context, state) => roastRedirect(
+      location: state.matchedLocation,
+      pending: ref.read(roastGateProvider).pending,
+    ),
     routes: [
+      GoRoute(
+        path: AppRoutes.roast,
+        builder: (context, state) => const RoastView(),
+      ),
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SessionGateView(),

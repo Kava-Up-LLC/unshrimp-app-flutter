@@ -41,7 +41,7 @@ void main() {
           'key': 'tone',
           'order': 1,
           'title': 'How should the app treat you?',
-          'subtitle': "This sets the Camarometro's tone.",
+          'subtitle': "This sets how fast your Spine Battery drains.",
           'type': 'single_choice',
           'options': [
             {'label': 'Gentle — Cheers you on.', 'value': 'gentle'},

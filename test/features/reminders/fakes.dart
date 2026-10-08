@@ -122,10 +122,11 @@ class FakeReminderNotifications implements ReminderNotifications {
 }
 
 class FakeReminderPreferences implements ReminderPreferences {
-  FakeReminderPreferences({this.asked = false, this.pack});
+  FakeReminderPreferences({this.asked = false, this.pack, this.roastLines});
 
   bool asked;
   String? pack;
+  String? roastLines;
 
   @override
   Future<bool> wasPermissionAsked() async => asked;
@@ -138,6 +139,12 @@ class FakeReminderPreferences implements ReminderPreferences {
 
   @override
   Future<void> writeSarcasmPack(String raw) async => pack = raw;
+
+  @override
+  Future<String?> readRoastLines() async => roastLines;
+
+  @override
+  Future<void> writeRoastLines(String raw) async => roastLines = raw;
 }
 
 class FakeEventLog implements EventLog {

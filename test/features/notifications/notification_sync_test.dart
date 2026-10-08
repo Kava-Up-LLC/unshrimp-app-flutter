@@ -46,8 +46,8 @@ void main() {
     await _sync(log, rows).sync();
 
     expect(rows.logged.single.map((r) => (r.title, r.body, r.pack)), [
-      ('MoveWell', 'Line 10', 'halloween'),
-      ('MoveWell', 'Line 11', 'halloween'),
+      ('Unshrimp', 'Line 10', 'halloween'),
+      ('Unshrimp', 'Line 11', 'halloween'),
     ]);
     expect(log.lastSync, DateTime(2026, 9, 29, 11, 30));
 

@@ -11,8 +11,11 @@ class UserStats {
     required this.roastPending,
   });
 
-  /// Highest value the Camarómetro can reach.
+  /// Highest roast level; a fully drained Spine Battery (0% charge).
   static const maxRoastLevel = 5;
+
+  /// Spine Battery charge as a percent: full at roast level 0, empty at 5.
+  int get batteryPercent => (maxRoastLevel - roastLevel.clamp(0, maxRoastLevel)) * 20;
 
   final int userId;
   final String name;

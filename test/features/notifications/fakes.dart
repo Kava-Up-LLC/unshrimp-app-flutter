@@ -81,7 +81,7 @@ class FakeNotificationsRepository implements NotificationsRepository {
 AppNotification notification(int id, DateTime sentAt, {bool read = false}) =>
     AppNotification(
       id: id,
-      title: 'MoveWell',
+      title: 'Unshrimp',
       body: 'Line $id',
       pack: 'default',
       sentAt: sentAt,

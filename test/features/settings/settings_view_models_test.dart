@@ -2,6 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
+import 'package:move_well_app/features/home/models/user_stats.dart';
+import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:move_well_app/features/home/view_models/home_view_model.dart';
+import 'package:move_well_app/features/reconcile/models/reconcile_status.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:move_well_app/features/settings/models/pause_option.dart';
 import 'package:move_well_app/features/settings/models/user_settings.dart';
@@ -10,14 +14,16 @@ import 'package:move_well_app/features/settings/view_models/change_password_view
 import 'package:move_well_app/features/settings/view_models/settings_view_model.dart';
 
 import '../auth/fakes.dart';
+import '../home/fakes.dart';
 import '../reminders/fakes.dart';
 import 'fakes.dart';
 
 ProviderContainer _container(
-  FakeSettingsRepository repo, [
+  FakeSettingsRepository repo, {
   FakeTokenStorage? store,
   FakeReminderScheduler? scheduler,
-]) {
+  FakeHomeRepository? home,
+}) {
   final container = ProviderContainer(
     overrides: [
       settingsRepositoryProvider.overrideWithValue(repo),
@@ -25,6 +31,7 @@ ProviderContainer _container(
       reminderSchedulerProvider.overrideWithValue(
         scheduler ?? FakeReminderScheduler(),
       ),
+      homeRepositoryProvider.overrideWithValue(home ?? FakeHomeRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -144,7 +151,11 @@ void main() {
     test('log out cancels the reminders and clears the token', () async {
       final store = FakeTokenStorage('t');
       final scheduler = FakeReminderScheduler();
-      final c = _container(FakeSettingsRepository(), store, scheduler);
+      final c = _container(
+        FakeSettingsRepository(),
+        store: store,
+        scheduler: scheduler,
+      );
       await c.read(settingsViewModelProvider.future);
 
       await c.read(settingsViewModelProvider.notifier).logOut();
@@ -155,7 +166,7 @@ void main() {
 
     test('a saved change reschedules from the returned row', () async {
       final scheduler = FakeReminderScheduler();
-      final c = _container(FakeSettingsRepository(), null, scheduler);
+      final c = _container(FakeSettingsRepository(), scheduler: scheduler);
       await c.read(settingsViewModelProvider.future);
 
       await c.read(settingsViewModelProvider.notifier).quietModeChanged(true);
@@ -169,8 +180,7 @@ void main() {
         FakeSettingsRepository(
           error: const AuthException(code: 'NETWORK', message: 'offline'),
         ),
-        null,
-        scheduler,
+        scheduler: scheduler,
       );
       await c.read(settingsViewModelProvider.future);
 
@@ -181,7 +191,7 @@ void main() {
 
     test('the debug reminder does not touch the schedule', () async {
       final scheduler = FakeReminderScheduler();
-      final c = _container(FakeSettingsRepository(), null, scheduler);
+      final c = _container(FakeSettingsRepository(), scheduler: scheduler);
       await c.read(settingsViewModelProvider.future);
 
       await c.read(settingsViewModelProvider.notifier).fireTestReminder();
@@ -191,13 +201,59 @@ void main() {
       expect(scheduler.cancelCalls, 0);
     });
 
+    test('registerIgnoreDebug reports one ignore with the tz offset '
+        'and pushes the row into Home', () async {
+      const afterIgnore = UserStats(
+        userId: 3,
+        name: 'Grace Hopper',
+        archetype: null,
+        currentStreak: 4,
+        breaksToday: 2,
+        ignoredCount: 1,
+        roastLevel: 1,
+        roastPending: false,
+      );
+      final home = FakeHomeRepository(afterIgnore: afterIgnore);
+      final c = _container(FakeSettingsRepository(), home: home);
+      await c.read(settingsViewModelProvider.future);
+      // Let Home settle before the ignore applies its row.
+      final homeSub = c.listen(homeViewModelProvider, (_, _) {});
+      await c.read(homeViewModelProvider.future);
+
+      final outcome = await c
+          .read(settingsViewModelProvider.notifier)
+          .registerIgnoreDebug();
+
+      expect(home.ignoreCalls, 1);
+      expect(home.lastIgnoreCount, 1);
+      expect(home.lastTzOffsetMin, DateTime.now().timeZoneOffset.inMinutes);
+      expect(outcome.status, ReconcileStatus.counted);
+      expect(outcome.ignored, 1);
+      expect(outcome.batteryPercent, 80); // roast 1 -> (5-1)*20
+      expect(c.read(homeViewModelProvider).value, same(afterIgnore));
+      homeSub.close();
+    });
+
+    test('tone row sends the tone and refreshes the shown settings', () async {
+      final repo = FakeSettingsRepository();
+      final c = _container(repo);
+      await c.read(settingsViewModelProvider.future);
+
+      await c.read(settingsViewModelProvider.notifier).toneChanged('no_mercy');
+
+      expect(repo.updates.single, {'tone': 'no_mercy'});
+      expect(c.read(settingsViewModelProvider).value!.settings.tone, 'no_mercy');
+    });
+
     test('isPausedAt ignores a pause that already ended', () {
       final now = DateTime.utc(2026, 9, 22, 12);
       UserSettings pausedUntil(DateTime? until) => UserSettings(
         activeStart: '09:00',
         activeEnd: '18:00',
         reminderIntervalMin: 60,
+        graceWindowMin: 60,
         dailyGoal: 5,
+        tone: 'direct',
         painZone: 'neck',
         quietMode: false,
         pausedUntil: until,

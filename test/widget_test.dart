@@ -6,11 +6,13 @@ import 'package:move_well_app/features/auth/repositories/auth_repository.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
 import 'features/auth/fakes.dart';
 import 'features/home/fakes.dart';
+import 'features/reconcile/fakes.dart';
 import 'features/reminders/fakes.dart';
 
 void main() {
@@ -20,6 +22,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage()),
@@ -41,6 +44,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
@@ -59,7 +63,7 @@ void main() {
 
     expect(find.text('Hi Grace Hopper'), findsOneWidget);
     expect(find.text('4 days'), findsOneWidget);
-    expect(find.text('3/5'), findsOneWidget);
+    expect(find.text('40%'), findsOneWidget);
     expect(find.text('2 breaks'), findsOneWidget);
     expect(find.text('Take a break now'), findsOneWidget);
   });
@@ -71,6 +75,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
@@ -87,7 +92,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Let MoveWell nag you'), findsOneWidget);
+    expect(find.text('Let Unshrimp nag you'), findsOneWidget);
 
     await tester.tap(find.text('Turn on reminders'));
     await tester.pumpAndSettle();

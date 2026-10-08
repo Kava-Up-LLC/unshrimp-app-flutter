@@ -12,12 +12,14 @@ import 'package:move_well_app/features/exercises/repositories/exercises_reposito
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
 import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
 import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
+import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
 
 import '../auth/fakes.dart';
+import '../reconcile/fakes.dart';
 import '../break/fakes.dart';
 import '../home/fakes.dart';
 import '../reminders/fakes.dart';
@@ -44,6 +46,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
@@ -85,7 +88,9 @@ void main() {
     expect(find.text('Micro-break'), findsOneWidget);
     // pain_zone comes from get_settings (neck).
     expect(find.text(neckStretch.title), findsOneWidget);
-    expect(log.properties.last, {'source': 'center'});
+    // Opening tracks nothing (break_started waits for Start); the row is still
+    // marked read on open via its reminder key.
+    expect(log.events, isEmpty);
     expect(rows.markedRead, [2]);
 
     await tester.tap(find.byTooltip('Back'));

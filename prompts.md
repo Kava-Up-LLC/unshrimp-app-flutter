@@ -565,3 +565,132 @@ Go ahead, the plan is right. The reminder_key is the correct way to identify whi
 - Keep the quiet failure (no match -> do nothing, never mark another row).
 Then run flutter analyze and flutter test, and redo the warm-tap repro on the simulator to show the row turning read and the badge clearing.
 ```
+
+
+# Day 4 (Episode 4) — Ignored Reminders + Posture Roast + Streak & Spine Battery
+
+> ⚠️ **Cloud Code lifecycle (learned the hard way — applies to prompts 3 and 4 below).**
+> For EVERY Cloud Code function created in this project the full lifecycle is:
+> create → deploy → wait for build `ready` → activate → **add the HTTP trigger**
+> (`set-cloud-function-trigger`, type `http`, slug = function name, enabled) → **remind the
+> user to set `AUTH_TOKEN_SECRET`** on the active version (same value as the auth functions;
+> it can't be read back, so a wrong/whitespace paste fails silently as INVALID_TOKEN) →
+> **verify with a real token via MCP** (`auth_register`/`auth_login`, then call the function —
+> it must NOT return INVALID_TOKEN). Missing trigger → the app's `CloudCode.call` fails with
+> "Something went wrong"; mismatched secret → every token is INVALID_TOKEN. Note:
+> `default_timeout_ms` (default 10000, too low for cold starts) can only be set at create
+> time or in the dashboard — there is no MCP tool to change it afterward.
+
+> State of the app (verified in code on `feature/roast-streak-engine`): Cloud Code functions already
+> called with `CloudCode.call('name', body: {'token': token, ...}).future`: auth_register, auth_login,
+> auth_validate, auth_change_password, save_onboarding, get_settings, update_settings, get_user_stats,
+> log_notifications, get_notifications, mark_notification_read. `user_stats` already has
+> ignored_count, roast_level, roast_pending, breaks_today, current_streak, last_break_date (all 0 /
+> false today; nothing writes them). `user_settings` has roast_threshold, daily_goal,
+> grace_window_min. `notifications` has was_ignored (null, reserved) and reminder_key. The Home reads
+> get_user_stats into UserStats (lib/features/home/models/user_stats.dart) and paints
+> CamarometroCard (roast_level 0..5), SpineStreakCard and BreaksTodayCard. The break
+> (lib/features/break/) starts its 60 s countdown as soon as it opens and tracks break_started on
+> open. The app name is "MoveWell" in: lib/core/config/move_well_app.dart (MaterialApp title),
+> lib/features/home/views/home_view.dart (AppBar), lib/features/reminders/repositories/
+> reminder_notifications.dart (notification title), lib/features/reminders/views/
+> reminder_permission_view.dart ("Let MoveWell nag you"), ios/Runner/Info.plist
+> (CFBundleDisplayName / CFBundleName), android/app/src/main/AndroidManifest.xml (android:label),
+> DESIGN.md and CLAUDE.md. Decisions from the plan: the app is now **Unshrimp**, the meter is now
+> **Spine Battery**, the break waits for a Start tap. Run in order: #1 is prep (before recording); #2
+> is a short on-camera beat; #3 to #5 are the on-camera prompts the shooting script labels PROMPT 1,
+> 2 and 3. Always say "episode", never "day", in anything that ends up on screen.
+
+## 1. The break waits for you: Start + 3, 2, 1  ·  PREP (run before recording)
+
+**Goal:** the 60 s countdown must not start by itself when the break opens. Reviewer feedback from
+episode 3. Small change, done off camera so the break shown in episode 4 already behaves this way.
+
+```text
+Change the 60s micro-break in lib/features/break/ so the countdown does NOT start when the screen opens.
+
+Today BreakViewModel starts ticking and tracks break_started in build(). Change it to:
+1) The screen opens showing the exercise (image, title, steps) with the timer at 60 and a primary button "Start". Nothing ticks yet and NO analytics event is sent on open.
+2) Tapping Start tracks break_started (same payload as today, with the zone), shows a 3, 2, 1 countdown (one second each, big centered digits over the exercise), then runs the 60s countdown exactly as today.
+3) Keep everything else the same: break_completed only when it reaches 0, "Survived" enabled only then, leaving earlier tracks nothing, a reminder tap still opens the break and marks its notifications row read via reminder_key. No pause button during the 60s.
+
+Model this as a phase in BreakState (ready / countingIn / running / done) instead of booleans, keep Riverpod + MVVM + go_router and no setState, and update the tests in test/features/break/ so they cover: nothing tracked on open, break_started on Start, the 3-2-1 before the 60s. Run flutter analyze and flutter test. Do not touch the reminder engine or the Notification Center. Tell me your plan before changing anything, and wait for my OK.
+```
+
+## 2. Rename the app to Unshrimp and the meter to Spine Battery  ·  on-camera quick beat (speed-ramp)
+
+**Goal:** apply the two naming decisions as one visible change at the top of the episode. Show the
+prompt and the result (Home with the new name and the new card), nothing else.
+
+```text
+Two renames from the episode 3 feedback, UI and copy only. Do NOT change the Dart package name (move_well_app), the Android applicationId / namespace, the iOS bundle identifier, the AppAmbit app or key, or any database field; those stay for now.
+
+1) The app is now called "Unshrimp". For the native app name use the Flutter `rename` CLI package, not hand edits: run `flutter pub global activate rename` (skip if already active), then `rename getAppName --targets ios,android` to show the current name, then `rename setAppName --targets ios,android --value "Unshrimp"`. That updates CFBundleDisplayName / CFBundleName in ios/Runner/Info.plist and android:label in android/app/src/main/AndroidManifest.xml; show me the diff of those two files. Do NOT run setBundleId or change applicationId / namespace. Then replace the remaining user-visible "MoveWell" strings in Dart by hand: the MaterialApp title in lib/core/config/move_well_app.dart, the Home AppBar title in lib/features/home/views/home_view.dart, the notification title in lib/features/reminders/repositories/reminder_notifications.dart, and the headline "Let MoveWell nag you" in lib/features/reminders/views/reminder_permission_view.dart; plus the pubspec.yaml description and the references in DESIGN.md and CLAUDE.md. Keep the current icon. Grep the repo for "MoveWell" afterwards and show me what is left (code comments and the class name MoveWellApp may stay).
+
+2) The Home meter "Camarómetro" is now "Spine Battery": a battery that drains with every ignored reminder and recharges with every completed break. It still reads user_stats.roast_level (0 to 5), but it is displayed as charge: 5 segments filled = 5 - roast_level, and a percent = (5 - roast_level) * 20. Rename CamarometroCard to SpineBatteryCard (file spine_battery_card.dart), keep the coral color, and use these labels by charge: 100% "Fully charged", 80% "Running fine", 60% "Getting low", 40% "Low battery", 20% "Critical", 0% "Dead. Stretch to recharge." Update the doc comments, DESIGN.md and CLAUDE.md, and every other "Camarómetro"/"Camarometro" string in lib/ and test/. The onboarding tone question's subtitle "This sets the Camarometro's tone." becomes "This sets how fast your Spine Battery drains." in the fallback (lib/features/onboarding/repositories/fallback_onboarding_questions.dart) AND in the CMS entry of the onboarding questions (use the appambit MCP to update that content), so the app and the cloud say the same thing.
+
+Run flutter analyze and flutter test, then run the app so I can see Home with "Unshrimp" in the AppBar and the Spine Battery card at 100%. Tell me your plan before changing anything, and wait for my OK.
+```
+
+## 3. The brain in the cloud: register_break and register_ignore  ·  on-camera prompt 1
+
+**Goal:** the two Cloud Code functions that decide "did / did not", atomic, returning the new
+`user_stats`. Nothing is counted on the phone. The expected failure to capture: the agent counting
+on the client or writing without a transaction (double tap duplicates the streak).
+
+```text
+The Home already shows Spine Battery, Spine Streak and Breaks today from get_user_stats, but they never move because nothing decides "did the break / ignored the reminder". Build that decision in AppAmbit Cloud Code, server-side and atomic. Do NOT count anything on the phone: the app only reports what happened and refetches the stats the function returns.
+
+Create two Cloud Code functions (Node built-ins only; resolve the user from the session token exactly like get_user_stats does; read get_user_stats and update_settings with the appambit MCP first and stay consistent; deploy -> wait for ready -> activate; keep secrets out of the code):
+
+- register_break({token}): in ONE batchInTransaction on user_stats: ignored_count = 0; roast_level = max(0, roast_level - 1); breaks_today = breaks_today + 1 (reset to 1 if last_break_date is before today); if breaks_today >= user_settings.daily_goal and last_break_date != today then current_streak = current_streak + 1; last_break_date = today; roast_pending = false. Return the full updated user_stats row.
+- register_ignore({token, count}): count is a whole number >= 1. In ONE batchInTransaction: ignored_count = ignored_count + count; roast_level = min(5, roast_level + count); if ignored_count >= user_settings.roast_threshold then roast_pending = true. Only count when the user is inside their active window (active_start..active_end) and paused_until is null or in the past; otherwise return the row unchanged with ignored: 0. Return the full updated row.
+
+Both must be safe against a double call: calling register_break twice in the same second must not increment current_streak twice (the last_break_date != today check must be inside the transaction).
+
+In the app: when the 60s break reaches 0 and the user taps Survived, call register_break and replace the Home stats with the returned row (no local math). Add a temporary debug action in Settings next to "Fire test reminder (5 s)": "Register ignore (debug)" that calls register_ignore with count 1, so I can see the row change in the dashboard. Keep it behind kDebugMode like the other debug tools.
+
+Do not build the Posture Roast screen or the reconciliation yet. Run flutter analyze and flutter test, show me both functions active, then run the app so I tap "Register ignore (debug)" and we watch user_stats in the AppAmbit dashboard: ignored_count 1, roast_level 1, and Spine Battery drops to 80%. Tell me your plan before changing anything, and wait for my OK.
+```
+
+## 4. The app finds out: reconciliation of expired reminders  ·  on-camera prompt 2
+
+**Goal:** on launch and on resume, the app checks which reminders expired without a completed
+break and reports them ONCE. Marks `notifications.was_ignored = true` through Cloud Code.
+Lessons from prompt 3 baked in: HTTP trigger + secret via MCP + real-token check for every new
+function; `tz_offset_min` on every `register_ignore` call; the active-window rule is a feature, not a
+bug, so the UI says why nothing was counted.
+
+```text
+Now make the app notice the reminders I ignored. Add a reconciliation step that runs when the app launches and when it comes back to the foreground.
+
+1) Cloud Code. Add get_pending_reminders({token}) that returns this user's notifications rows with read = false and was_ignored IS NULL (id, reminder_key, sent_at), and mark_ignored({token, ids}) that sets was_ignored = true on those rows for this user only (notifications.id is the primary key). Node built-ins only, same readToken helper as register_ignore. For EACH function follow the full lifecycle: create -> deploy -> wait until ready -> activate -> add the HTTP trigger (slug = function name, enabled) -> set AUTH_TOKEN_SECRET with set-cloud-function-env marked secret, same value register_ignore has (ask me for it if you don't have it; never write it to a file, log, test or commit) -> verify with a fresh throwaway user and a real token via the MCP, then delete that user. Show me the final state (active, trigger, env set, verified).
+
+2) App. In lib/features/reconcile/ (Riverpod + MVVM, no setState): on launch and on resume, fetch the pending rows. A reminder is "expired" when now > sent_at + grace_window_min (from get_settings) and it was sent inside the user's active window, both computed in the DEVICE's local time. If there are N expired rows: call register_ignore with count N and tz_offset_min (DateTime.now().timeZoneOffset.inMinutes, like the debug action already does), then mark_ignored with their ids, then apply the returned user_stats to Home (applyStats) so the Spine Battery updates. If N is 0 do nothing. Never call register_ignore for rows already marked, so reopening the app does not count twice. If register_ignore returns ignored: 0 (outside active hours or paused), still mark nothing and surface the reason in debug output; that is the business rule, not an error.
+
+3) Settings debug. Add "Reconcile now (debug)" behind kDebugMode, next to "Register ignore (debug)": it runs the same reconciliation but treats every pending row as expired, so I can demo it without waiting for the grace window. Both debug actions' SnackBars must show the Spine Battery percent ("ignored 3, battery 40%"), not "roast x/5". When register_ignore comes back with ignored: 0, the SnackBar says "Not counted: outside active hours or reminders paused".
+
+Tests: the expired-row rule (inside/outside window, before/after grace), the "never twice" rule, and that tz_offset_min is sent. Run flutter analyze and flutter test.
+
+Demo setup, before you run the app: my test user must have roast_threshold = 3 (tone "direct"); check get_settings and tell me if it is not, so I change the tone in Settings first. The active window is already widened for recording. I have 3 untouched reminders in the Center. Then I tap "Reconcile now (debug)" and we watch user_stats go to ignored_count 3, roast_level 3, roast_pending true, Spine Battery 40%, and the three notifications rows flip to was_ignored = true. Then I reopen the app to prove it does not count again. Tell me your plan before changing anything, and wait for my OK.
+```
+
+## 5. The Posture Roast and the way back  ·  on-camera prompt 3
+
+**Goal:** full-screen punishment when `roast_pending` is true, with the roast text living in Remote
+Config, and the break from there clearing everything. No new Cloud Code function; `register_break`
+already runs on "Survived" since prompt 3.
+
+```text
+Build the Posture Roast. When get_user_stats returns roast_pending = true, the app shows a full-screen roast BEFORE Home, on launch and right after a reconciliation that sets it, in lib/features/roast/ (Riverpod + MVVM + go_router, no setState):
+
+- Coral background (colorScheme.secondary), the shrimp art from assets/images, one big roast line, the Spine Battery card at its current charge (percent, same widget as Home), and two buttons: "Fix my posture" (primary) and "Share my shame" (secondary, OS share sheet with the roast line followed by " — Unshrimp").
+- Roast lines come from AppAmbit Remote Config key roast_lines, a JSON array of strings. Create the key with the appambit MCP if it has a Remote Config tool; if not, give me the exact key name and JSON to paste in the dashboard and wait. Seed these three lines: "Three reminders ignored. Your chair has officially adopted you." / "You had one job: stand up. The shrimp won." / "Museum skeletons are laughing at you right now." Pick one at random per roast. Cache the last fetched array the same way sarcasm_pack is cached so the roast still shows offline; fall back to the first line if nothing is cached.
+- "Fix my posture" opens the existing 60s break for the user's pain_zone with source = roast (Start, 3-2-1, 60s, Survived). Survived already calls register_break and applies the returned stats; since that function sets roast_pending = false and ignored_count = 0, just go to Home afterwards. Leaving the break early keeps roast_pending true, so the roast shows again on next launch. No pause button, no way to dismiss the roast without the break (back gesture returns to the roast).
+- Routing: a redirect in app_router.dart sends to the roast whenever the current user_stats has roast_pending = true, and back to Home when it is false. Make sure the redirect reads the stats the reconciliation just applied, not a stale copy.
+- Track roast_shown and roast_shared in Analytics.
+
+Tests: redirect on/off by roast_pending, random line from the cached array, fallback line when cache is empty. Run flutter analyze and flutter test.
+
+Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I relaunch the app, we see the roast, I tap "Share my shame" to show the sheet and cancel, then "Fix my posture", Start, 3-2-1, survive, and we watch user_stats go to ignored_count 0, roast_pending false, roast_level 2, breaks_today +1, with Home back at 60%. Then I change one roast line in Remote Config and force another roast to show the new text with no rebuild. Tell me your plan before changing anything, and wait for my OK.
+```

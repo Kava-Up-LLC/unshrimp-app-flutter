@@ -12,11 +12,13 @@ import 'package:move_well_app/features/notifications/models/scheduled_reminder.d
 import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
 import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
 import 'package:move_well_app/features/notifications/view_models/has_unread_notifications_view_model.dart';
+import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
 import '../auth/fakes.dart';
+import '../reconcile/fakes.dart';
 import '../home/fakes.dart';
 import '../reminders/fakes.dart';
 import 'fakes.dart';
@@ -41,6 +43,7 @@ Future<void> _pumpHome(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
         ..._overrides(rows),
         authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
         homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),

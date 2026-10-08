@@ -17,7 +17,7 @@ AppNotification _row(
   bool read = false,
 }) => AppNotification(
   id: id,
-  title: 'MoveWell',
+  title: 'Unshrimp',
   body: 'Line $id',
   pack: 'default',
   sentAt: sentAt,

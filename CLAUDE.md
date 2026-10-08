@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-`move_well_app` (MoveWell) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. App name is **MoveWell** on both platforms; Android `applicationId`/`namespace` is `com.appambit.movewell`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
+`move_well_app` (Unshrimp) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. User-visible app name is **Unshrimp** on both platforms (the Dart package dir stays `move_well_app`); Android `applicationId`/`namespace` is `com.appambit.movewell`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
 
 Dart SDK constraint is `^3.11.0`, so newer syntax such as dot shorthands (`.fromSeed(...)`) is valid. Linting uses `flutter_lints` (`analysis_options.yaml`) with no custom rules.
 
@@ -27,7 +27,7 @@ dart run flutter_launcher_icons                   # regenerate app icons (config
 - `lib/core/config/app_bootstrap.dart`: loads `.env` (`flutter_dotenv`, file registered as an asset), starts the AppAmbit SDK with `APPAMBIT_APP_KEY`, and runs the app inside `ProviderScope`. `.env` is gitignored; `.env.example` is the template.
 - `lib/core/config/move_well_app.dart`: root `ConsumerWidget` with `MaterialApp.router`, reading `appRouterProvider` and `AppTheme.light` / `AppTheme.dark`.
 - `lib/core/router/`: `app_routes.dart` holds path constants; `app_router.dart` exposes the single `GoRouter` via `appRouterProvider`. Every new view gets a constant in `AppRoutes` and a `GoRoute` here.
-- `lib/core/theme/`: `app_colors.dart` (palette) and `app_theme.dart` (Material 3 light/dark). Palette meaning: teal = primary/health/"take a break"; coral (`secondary`) = shrimp posture, Posture Roast, Camarómetro; amber (`tertiary`) = Spine Streak/achievements. Use `Theme.of(context).colorScheme`, not hardcoded colors.
+- `lib/core/theme/`: `app_colors.dart` (palette) and `app_theme.dart` (Material 3 light/dark). Palette meaning: teal = primary/health/"take a break"; coral (`secondary`) = shrimp posture, Posture Roast, Spine Battery; amber (`tertiary`) = Spine Streak/achievements. Use `Theme.of(context).colorScheme`, not hardcoded colors.
 
 ## Backend: AppAmbit
 
@@ -63,6 +63,38 @@ The `jwt_auth` test function lives in a separate AppAmbit app (key `294f7dd6-987
 After editing a `.dart` file under `lib/` (not comment/whitespace-only changes, not files in `test/` etc.):
 - Find the running app with the Dart MCP server (`dtd` / `list_running_apps`).
 - Call `hot_reload` after UI/widget or simple method changes; call `hot_restart` after changes to `main()`, provider/state initialization, or global/static state.
+
+## Exercise illustrations (character)
+
+Before generating, editing or showing ANY exercise image (`assets/dataset/media/`), read the
+**Exercise character** section of `DESIGN.md` and apply its **Hard rules**, **Checklist** and
+**Errors already made** table. The user must not have to repeat them in each prompt. The ones
+most often broken:
+
+- **No eyes, ever**: no eye, no closed-eye stroke, nothing at eye height on a redrawn face.
+- **Same build as the approved images, never thinner**: copy the pose from the reference
+  image, never its body. Measure torso, thigh and arm against the numbers in `DESIGN.md`.
+- **Limbs proportional to the approved images in every pose**: same arm and leg length as
+  mountain pose / chin tuck (numbers in `DESIGN.md`), not shorter and not longer. Measure.
+- Same black hair and cut, teal polo, navy trousers down to the shoe, white sneakers with
+  teal laces, same height.
+- **Folded poses must read as bending down**: legs almost vertical, hips small and low (the
+  buttocks never stick out or up, never "nalgón"), rounded back, head looking forward and
+  down in line with the back. Never a flat table back ("en cuatro"). Both arms and hands
+  the same size.
+- **Clothes drape on the pose**: a shirt on a bent back is one soft silhouette, never a
+  stiff board. **Hands crisp**: clear brown lines, never blurred or speckled.
+- **Describe the reference first**: limb by limb (straight or bent, where each elbow and hand
+  is relative to the head, lean of the torso), then replicate exactly that. Never simplify it.
+- **Same view as the reference**: a pose whose limbs fold forward or backward (quad stretch,
+  lunge, forward fold) is drawn in profile, never forced onto the front view.
+- **Both legs visible in profile**: the far leg shows a step ahead of the near one (and its
+  shoe toe); never one leg alone.
+- **Natural, never robotic**: no straight parallel limbs or boxy torso. Joints a little bent,
+  one continuous curve along the spine, the two arms slightly different.
+- Check the result at real size next to approved images and the reference, part by part,
+  and ask what action the image reads as, before showing it. One image at a time; change only what the user points at.
+- When the user rejects something, add the rule to `DESIGN.md` in the same turn.
 
 ## Design (screens)
 

@@ -1,49 +1,45 @@
-import 'package:appambit_sdk_flutter/appambit_sdk_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/models/auth_exception.dart';
+import '../../../core/cloud/cloud_functions.dart';
+import '../models/ignore_result.dart';
 import '../models/user_stats.dart';
 
-/// Reads the logged-in user's stats through the `get_user_stats` Cloud Code
-/// function. The database is never touched directly from the app.
+/// Reads and mutates the logged-in user's stats through Cloud Code. The
+/// database is never touched directly from the app, and the counting (breaks,
+/// ignores, streak) happens server-side — the app only reports what happened
+/// and shows the row the function returns.
 class HomeRepository {
-  const HomeRepository();
+  const HomeRepository([this._cloud = const CloudFunctions()]);
 
-  static const _timeout = Duration(seconds: 20);
+  final CloudFunctions _cloud;
 
-  Future<UserStats> fetchStats(String token) async {
-    try {
-      final response = await CloudCode.call(
-        'get_user_stats',
-        body: {'token': token},
-        timeout: _timeout,
-      ).future;
+  /// `get_user_stats`: the current stats row. Idempotent read → may retry once.
+  Future<UserStats> fetchStats(String token) async => UserStats.fromJson(
+    await _cloud.call('get_user_stats', {'token': token}, retry: true),
+  );
 
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw const AuthException(
-          code: 'UNEXPECTED_RESPONSE',
-          message: 'Unexpected response from the server.',
-        );
-      }
+  /// `register_break`: the user survived a 60 s break. Returns the updated row.
+  Future<UserStats> registerBreak(String token) async =>
+      UserStats.fromJson(await _cloud.call('register_break', {'token': token}));
 
-      final code = data['error'];
-      if (code != null) {
-        throw AuthException(
-          code: code.toString(),
-          message: (data['message'] ?? code).toString(),
-        );
-      }
-
-      return UserStats.fromJson(data);
-    } on CloudCodeError catch (e) {
-      throw AuthException(
-        code: e.code.name,
-        message: e.code == CloudCodeErrorCode.http
-            ? 'Something went wrong. Please try again.'
-            : "Couldn't reach the server. Check your connection and try again.",
-      );
-    }
+  /// `register_ignore`: the user let [count] reminder(s) lapse. [tzOffsetMin]
+  /// is the device's UTC offset in minutes so the server can test the active
+  /// window against the user's wall clock. Returns the updated row plus how
+  /// many were actually counted (0 when outside the window or paused).
+  Future<IgnoreResult> registerIgnore(
+    String token, {
+    required int count,
+    required int tzOffsetMin,
+  }) async {
+    final data = await _cloud.call('register_ignore', {
+      'token': token,
+      'count': count,
+      'tz_offset_min': tzOffsetMin,
+    });
+    return IgnoreResult(
+      ignored: (data['ignored'] as num?)?.toInt() ?? 0,
+      stats: UserStats.fromJson(data),
+    );
   }
 }
 

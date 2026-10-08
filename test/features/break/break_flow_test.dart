@@ -10,12 +10,14 @@ import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/break/view_models/break_view_model.dart';
 import 'package:move_well_app/features/exercises/repositories/exercises_repository.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
 
 import '../auth/fakes.dart';
+import '../reconcile/fakes.dart';
 import '../home/fakes.dart';
 import '../reminders/fakes.dart';
 import '../settings/fakes.dart';
@@ -41,6 +43,7 @@ class _App {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
@@ -68,6 +71,10 @@ class _App {
   Future<void> tick(WidgetTester tester, int seconds) async {
     for (var i = 0; i < seconds; i++) {
       ticks.add(null);
+      // Let the broadcast stream deliver (a microtask) before the frame, so
+      // each tick's new state is on screen by the time this pump returns. A
+      // zero-duration Future would hang: its timer needs the clock pumped.
+      await Future<void>.microtask(() {});
       await tester.pump();
     }
   }
@@ -76,8 +83,14 @@ class _App {
 FilledButton _survived(WidgetTester tester) =>
     tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Survived'));
 
+Future<void> _start(WidgetTester tester) async {
+  await tester.ensureVisible(find.text('Start'));
+  await tester.tap(find.text('Start'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('Take a break now -> countdown -> Survived back to Home', (
+  testWidgets('Take a break now -> Start -> 3-2-1 -> countdown -> Survived', (
     tester,
   ) async {
     final app = _App();
@@ -87,11 +100,25 @@ void main() {
     await tester.tap(find.text('Take a break now'));
     await tester.pumpAndSettle();
 
-    // pain_zone comes from get_settings (FakeSettingsRepository: neck).
+    // Opens ready: pain_zone from get_settings (FakeSettingsRepository: neck),
+    // timer at 60, a Start button, and nothing tracked yet.
     expect(find.text(neckStretch.title), findsOneWidget);
     expect(find.text('60s'), findsOneWidget);
-    expect(_survived(tester).onPressed, isNull);
+    expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Survived'), findsNothing);
+    expect(app.log.events, isEmpty);
+
+    await _start(tester);
     expect(app.log.events, ['break_started']);
+
+    // The 3, 2, 1 count-in, one second each, before the 60 s.
+    expect(find.text('3'), findsOneWidget);
+    await app.tick(tester, 1);
+    expect(find.text('2'), findsOneWidget);
+    await app.tick(tester, 1);
+    expect(find.text('1'), findsOneWidget);
+    await app.tick(tester, 1);
+    expect(find.text('60s'), findsOneWidget);
 
     await app.tick(tester, 60);
 
@@ -115,7 +142,8 @@ void main() {
     await tester.ensureVisible(find.text('Take a break now'));
     await tester.tap(find.text('Take a break now'));
     await tester.pumpAndSettle();
-    await app.tick(tester, 20);
+    await _start(tester);
+    await app.tick(tester, 3 + 17);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
@@ -134,8 +162,10 @@ void main() {
     app.notifications.tapController.add('none');
     await tester.pumpAndSettle();
 
+    // Opens ready and tracks nothing until Start.
     expect(find.text(generalStretch.title), findsOneWidget);
-    expect(app.log.properties.single, {'source': 'reminder', 'zone': 'none'});
+    expect(find.widgetWithText(FilledButton, 'Start'), findsOneWidget);
+    expect(app.log.events, isEmpty);
   });
 
   testWidgets('a reminder that launched the app opens its break', (
@@ -145,7 +175,7 @@ void main() {
     await app.pump(tester);
 
     expect(find.text(neckStretch.title), findsOneWidget);
-    expect(app.log.properties.single, {'source': 'reminder', 'zone': 'neck'});
+    expect(app.log.events, isEmpty);
 
     // Back returns to Home.
     await tester.tap(find.byTooltip('Back'));
@@ -160,10 +190,11 @@ void main() {
     final app = _App(realTicks: true);
     await app.pump(tester);
 
-    // First break of the session, left early.
+    // First break of the session, started then left early.
     await tester.ensureVisible(find.text('Take a break now'));
     await tester.tap(find.text('Take a break now'));
     await tester.pumpAndSettle();
+    await _start(tester);
     await tester.pump(const Duration(seconds: 3));
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
@@ -175,7 +206,9 @@ void main() {
     expect(find.text("Couldn't load the break."), findsNothing);
     expect(find.text(generalStretch.title), findsOneWidget);
 
-    for (var i = 0; i < 60; i++) {
+    await _start(tester);
+    // 3 s count-in, then the 60 s countdown.
+    for (var i = 0; i < 3 + 60; i++) {
       await tester.pump(const Duration(seconds: 1));
     }
     expect(find.text('Done'), findsOneWidget);

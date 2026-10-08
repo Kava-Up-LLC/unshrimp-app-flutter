@@ -7,14 +7,15 @@ import '../../auth/models/auth_exception.dart';
 import '../../break/models/break_args.dart';
 import '../../break/models/break_source.dart';
 import '../../notifications/view_models/has_unread_notifications_view_model.dart';
+import '../../shared/widgets/log_out_dialog.dart';
 import '../models/user_stats.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/breaks_today_card.dart';
-import '../widgets/camarometro_card.dart';
 import '../widgets/notifications_bell.dart';
+import '../widgets/spine_battery_card.dart';
 import '../widgets/spine_streak_card.dart';
 
-/// Home: the logged-in user's streak, Camarómetro and today's breaks.
+/// Home: the logged-in user's streak, Spine Battery and today's breaks.
 class HomeView extends ConsumerWidget {
   const HomeView({super.key});
 
@@ -34,7 +35,7 @@ class HomeView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MoveWell'),
+        title: const Text('Unshrimp'),
         actions: [
           NotificationsBell(
             hasUnread: hasUnread,
@@ -49,6 +50,7 @@ class HomeView extends ConsumerWidget {
             tooltip: 'Log out',
             icon: const Icon(Icons.logout),
             onPressed: () async {
+              if (!await confirmLogOut(context) || !context.mounted) return;
               await viewModel.logOut();
               if (context.mounted) context.go(AppRoutes.logIn);
             },
@@ -92,7 +94,7 @@ class _HomeContent extends StatelessWidget {
         const SizedBox(height: 20),
         SpineStreakCard(currentStreak: stats.currentStreak),
         const SizedBox(height: 16),
-        CamarometroCard(roastLevel: stats.roastLevel),
+        SpineBatteryCard(roastLevel: stats.roastLevel),
         const SizedBox(height: 16),
         BreaksTodayCard(breaksToday: stats.breaksToday),
         const SizedBox(height: 32),

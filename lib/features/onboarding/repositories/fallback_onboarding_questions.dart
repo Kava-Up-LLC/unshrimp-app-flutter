@@ -45,7 +45,7 @@ const fallbackOnboardingQuestions = [
     key: 'tone',
     order: 4,
     title: 'How should the app treat you?',
-    subtitle: "This sets the Camarometro's tone.",
+    subtitle: "This sets how fast your Spine Battery drains.",
     type: QuestionType.singleChoice,
     options: [
       QuestionOption(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/break/models/break_args.dart';
+import '../../features/reconcile/view_models/reconcile_runner_provider.dart';
 import '../../features/reminders/view_models/reminder_resume_provider.dart';
 import '../../features/reminders/view_models/reminder_taps_provider.dart';
 import '../router/app_router.dart';
@@ -16,6 +17,7 @@ class MoveWellApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     ref.watch(reminderResumeProvider);
+    ref.watch(reconcileRunnerProvider);
 
     // A reminder tapped while the app runs opens its break. Taps that launch
     // the app are handled by the session gate.
@@ -26,7 +28,7 @@ class MoveWellApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: 'MoveWell',
+      title: 'Unshrimp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

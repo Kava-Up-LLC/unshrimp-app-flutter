@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
 import '../../reminders/services/reminder_scheduler.dart';
+import '../../roast/view_models/roast_gate_provider.dart';
 import '../models/user_stats.dart';
 import '../repositories/home_repository.dart';
 
@@ -19,6 +20,20 @@ final homeViewModelProvider =
 class HomeViewModel extends AsyncNotifier<UserStats> {
   @override
   Future<UserStats> build() async {
+    // Mirror roast_pending / roast_level into the router gate on every stats
+    // change (initial load, refresh, applyStats). The update is deferred to a
+    // microtask so it never runs inside a build phase (which Riverpod forbids).
+    listenSelf((_, next) {
+      final stats = next.value;
+      final gate = ref.read(roastGateProvider.notifier);
+      Future.microtask(
+        () => gate.update(
+          pending: stats?.roastPending ?? false,
+          roastLevel: stats?.roastLevel ?? 0,
+        ),
+      );
+    });
+
     final token = await ref.read(tokenStorageProvider).read();
     if (token == null) {
       throw const AuthException(
@@ -35,9 +50,14 @@ class HomeViewModel extends AsyncNotifier<UserStats> {
     state = await AsyncValue.guard(build);
   }
 
+  /// Replaces Home's stats with a row a Cloud Code mutation just returned, so
+  /// Home reflects a break or ignore without recomputing anything locally.
+  void applyStats(UserStats stats) => state = AsyncData(stats);
+
   /// Cancels the reminders and clears the stored session. The view navigates
   /// back to Log In.
   Future<void> logOut() async {
+    ref.read(roastGateProvider.notifier).update(pending: false, roastLevel: 0);
     await ref.read(reminderSchedulerProvider).cancelAll();
     await ref.read(tokenStorageProvider).delete();
   }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// MoveWell palette.
 ///
 /// - Teal: movement, health, "take a break" (primary actions).
-/// - Coral: the shrimp posture / Posture Roast / Camarómetro (shame, warnings).
+/// - Coral: the shrimp posture / Posture Roast / Spine Battery (shame, warnings).
 /// - Amber: Spine Streak 🔥 and achievements.
 class AppColors {
   const AppColors._();
@@ -18,6 +18,9 @@ class AppColors {
   static const coralLight = Color(0xFFFF9A80);
   static const coralContainer = Color(0xFFFFDAD1);
   static const coralContainerDark = Color(0xFF7A2A18);
+
+  /// Posture Roast backdrop — matches the shrimp icon's teal so it sits flush.
+  static const roastTeal = Color(0xFF46C5BE);
 
   static const amber = Color(0xFFFFB020);
   static const amberLight = Color(0xFFFFC95C);

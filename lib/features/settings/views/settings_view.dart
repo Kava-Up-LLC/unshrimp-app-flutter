@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../auth/models/auth_exception.dart';
+import '../../reconcile/models/reconcile_outcome.dart';
+import '../../reconcile/models/reconcile_status.dart';
 import '../../shared/widgets/error_banner.dart';
+import '../../shared/widgets/log_out_dialog.dart';
 import '../../shared/widgets/time_picker.dart';
 import '../models/pause_option.dart';
 import '../models/settings_options.dart';
@@ -96,6 +99,11 @@ class _SettingsContent extends StatelessWidget {
               value: '${settings.dailyGoal} breaks',
               onTap: enabled ? () => _pickGoal(context) : null,
             ),
+            SettingsRow(
+              label: 'Tone',
+              value: SettingsOptions.toneShort(settings.tone),
+              onTap: enabled ? () => _pickTone(context) : null,
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -140,12 +148,7 @@ class _SettingsContent extends StatelessWidget {
             SettingsRow(
               label: 'Log out',
               labelColor: colors.secondary,
-              onTap: enabled
-                  ? () async {
-                      await viewModel.logOut();
-                      if (context.mounted) context.go(AppRoutes.logIn);
-                    }
-                  : null,
+              onTap: enabled ? () => _logOut(context) : null,
             ),
           ],
         ),
@@ -159,20 +162,55 @@ class _SettingsContent extends StatelessWidget {
                 trailing: const Icon(Icons.notifications_outlined),
                 onTap: viewModel.fireTestReminder,
               ),
+              SettingsRow(
+                label: 'Register ignore (debug)',
+                subtitle: 'Debug only. Reports one ignored reminder.',
+                trailing: const Icon(Icons.timer_off_outlined),
+                onTap: () => _registerIgnoreDebug(context),
+              ),
+              SettingsRow(
+                label: 'Reconcile now (debug)',
+                subtitle: 'Debug only. Counts every pending reminder as expired.',
+                trailing: const Icon(Icons.rule_outlined),
+                onTap: () => _reconcileNowDebug(context),
+              ),
             ],
           ),
         ],
-        const SizedBox(height: 16),
-        const SettingsGroup(
-          children: [
-            SettingsRow(
-              label: 'Credits',
-              subtitle: 'Exercise data by RepDB (repdb.co)',
-            ),
-          ],
-        ),
       ],
     );
+  }
+
+  Future<void> _logOut(BuildContext context) async {
+    if (!await confirmLogOut(context) || !context.mounted) return;
+    await viewModel.logOut();
+    if (context.mounted) context.go(AppRoutes.logIn);
+  }
+
+  Future<void> _registerIgnoreDebug(BuildContext context) =>
+      _runDebug(context, viewModel.registerIgnoreDebug);
+
+  Future<void> _reconcileNowDebug(BuildContext context) =>
+      _runDebug(context, viewModel.reconcileNowDebug);
+
+  Future<void> _runDebug(
+    BuildContext context,
+    Future<ReconcileOutcome> Function() action,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final outcome = await action();
+      final text = switch (outcome.status) {
+        ReconcileStatus.counted =>
+          'ignored ${outcome.ignored}, battery ${outcome.batteryPercent}%',
+        ReconcileStatus.notCounted =>
+          'Not counted: outside active hours or reminders paused',
+        ReconcileStatus.nothingPending => 'Nothing to reconcile',
+      };
+      messenger.showSnackBar(SnackBar(content: Text(text)));
+    } on AuthException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   Future<void> _pickActiveHours(BuildContext context) async {
@@ -208,6 +246,17 @@ class _SettingsContent extends StatelessWidget {
       selected: state.settings.dailyGoal,
     );
     if (goal != null) await viewModel.dailyGoalChanged(goal);
+  }
+
+  Future<void> _pickTone(BuildContext context) async {
+    final tone = await showOptionSheet<String>(
+      context,
+      title: 'How should the app treat you?',
+      options: SettingsOptions.tones,
+      labelOf: (tone) => SettingsOptions.toneLabels[tone] ?? tone,
+      selected: state.settings.tone,
+    );
+    if (tone != null) await viewModel.toneChanged(tone);
   }
 
   Future<void> _pickPause(BuildContext context) async {

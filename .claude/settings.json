@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "ClaudeInChromeDomain(app.appambit.com)",
+      "ClaudeInChromeDomain(appambit.com)"
+    ]
+  }
+}

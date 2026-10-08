@@ -12,7 +12,7 @@ class ReminderNotifications {
   ReminderNotifications(this._plugin);
 
   /// Title of every reminder.
-  static const title = 'MoveWell';
+  static const title = 'Unshrimp';
 
   final FlutterLocalNotificationsPlugin _plugin;
   final _taps = StreamController<String?>.broadcast();

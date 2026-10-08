@@ -94,14 +94,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The roast is shown instead of Home, on the roastTeal background.
+    // The roast is shown instead of Home, on the coral container background.
     expect(find.text('Your chair adopted you.'), findsOneWidget);
     expect(find.text('Fix my posture'), findsOneWidget);
     expect(find.text('Hi Oliver H'), findsNothing);
     final roastScaffold = tester.widget<Scaffold>(
       find.descendant(of: find.byType(RoastView), matching: find.byType(Scaffold)),
     );
-    expect(roastScaffold.backgroundColor, AppColors.roastTeal);
+    expect(roastScaffold.backgroundColor, AppColors.coralContainerDark);
 
     // Fix my posture opens the break.
     await tester.tap(find.text('Fix my posture'));

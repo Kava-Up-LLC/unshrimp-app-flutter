@@ -23,7 +23,7 @@ class RoastView extends ConsumerWidget {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: AppColors.roastTeal,
+        backgroundColor: AppColors.coralContainerDark,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -32,24 +32,24 @@ class RoastView extends ConsumerWidget {
               children: [
                 const Spacer(),
                 Center(
-                  // Transparent, borderless: the icon's teal sits flush on the
-                  // matching roastTeal background instead of reading as a card.
-                  child: Container(
-                    decoration: const BoxDecoration(),
-                    child: Image.asset(
-                      'assets/images/icon_foreground.png',
-                      width: 180,
-                      height: 180,
-                    ),
+                  child: Image.asset(
+                    'assets/images/shrimp_hurt.png',
+                    width: 180,
+                    height: 180,
+                    // The hurt-shrimp art is produced separately; until it
+                    // lands, hold the layout instead of crashing on the
+                    // missing asset.
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox(width: 180, height: 180),
                   ),
                 ),
                 const SizedBox(height: 28),
                 Text(
                   line,
                   textAlign: TextAlign.center,
-                  // Near-black: white fails AA on roastTeal (~2.1:1).
+                  // White passes AA on coralContainerDark (#7A2A18, ~9.67:1).
                   style: textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textLight,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

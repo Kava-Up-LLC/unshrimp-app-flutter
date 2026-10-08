@@ -145,6 +145,16 @@ class FakeReminderPreferences implements ReminderPreferences {
 
   @override
   Future<void> writeRoastLines(String raw) async => roastLines = raw;
+
+  bool cleared = false;
+
+  @override
+  Future<void> clear() async {
+    cleared = true;
+    asked = false;
+    pack = null;
+    roastLines = null;
+  }
 }
 
 class FakeEventLog implements EventLog {

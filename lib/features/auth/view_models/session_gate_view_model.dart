@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/router/app_routes.dart';
+import '../../../core/session/reminder_data_cleanup.dart';
 import '../../break/models/break_args.dart';
 import '../../reminders/repositories/reminder_notifications.dart';
 import '../../reminders/services/reminder_scheduler.dart';
@@ -24,7 +25,13 @@ class SessionGateViewModel extends AsyncNotifier<SessionStart> {
   Future<SessionStart> build() async {
     final storage = ref.read(tokenStorageProvider);
     final token = await storage.read();
-    if (token == null) return _loggedOut;
+    if (token == null) {
+      // No session: a fresh install (Android backup is disabled) or a logged-out
+      // device must not keep a schedule from a previous install or user. Cancel
+      // and wipe before anything reschedules.
+      await clearReminderData(ref);
+      return _loggedOut;
+    }
 
     try {
       final valid = await ref.read(authRepositoryProvider).validate(token);

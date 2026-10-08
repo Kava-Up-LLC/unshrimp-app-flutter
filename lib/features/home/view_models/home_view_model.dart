@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
-import '../../reminders/services/reminder_scheduler.dart';
+import '../../../core/session/reminder_data_cleanup.dart';
 import '../../roast/view_models/roast_gate_provider.dart';
 import '../models/user_stats.dart';
 import '../repositories/home_repository.dart';
@@ -64,7 +64,9 @@ class HomeViewModel extends AsyncNotifier<UserStats> {
   /// back to Log In.
   Future<void> logOut() async {
     ref.read(roastGateProvider.notifier).update(pending: false, roastLevel: 0);
-    await ref.read(reminderSchedulerProvider).cancelAll();
+    // Clear the schedule, delivery log and reminder preferences, not just the
+    // OS reminders, so the next account on the device starts from nothing.
+    await clearReminderData(ref);
     await ref.read(tokenStorageProvider).delete();
   }
 }

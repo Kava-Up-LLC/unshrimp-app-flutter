@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/session/reminder_data_cleanup.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
 import '../../home/repositories/home_repository.dart';
@@ -98,7 +99,9 @@ class SettingsViewModel extends AsyncNotifier<SettingsState> {
   /// Cancels the reminders and clears the stored session. The view navigates
   /// back to Log In.
   Future<void> logOut() async {
-    await ref.read(reminderSchedulerProvider).cancelAll();
+    // Clear the schedule, delivery log and reminder preferences, not just the
+    // OS reminders, so the next account on the device starts from nothing.
+    await clearReminderData(ref);
     await ref.read(tokenStorageProvider).delete();
   }
 

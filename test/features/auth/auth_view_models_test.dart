@@ -7,9 +7,12 @@ import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/auth/view_models/log_in_view_model.dart';
 import 'package:move_well_app/features/auth/view_models/session_gate_view_model.dart';
 import 'package:move_well_app/features/auth/view_models/sign_up_view_model.dart';
+import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
+import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
 import 'fakes.dart';
 
@@ -29,6 +32,8 @@ ProviderContainer _container(
       reminderNotificationsProvider.overrideWithValue(
         notifications ?? FakeReminderNotifications(),
       ),
+      deliveryLogProvider.overrideWithValue(FakeDeliveryLog()),
+      reminderPreferencesProvider.overrideWithValue(FakeReminderPreferences()),
     ],
   );
   addTearDown(container.dispose);

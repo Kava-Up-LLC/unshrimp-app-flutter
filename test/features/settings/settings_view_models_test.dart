@@ -5,7 +5,9 @@ import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/home/models/user_stats.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
 import 'package:move_well_app/features/home/view_models/home_view_model.dart';
+import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
 import 'package:move_well_app/features/reconcile/models/reconcile_status.dart';
+import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:move_well_app/features/settings/models/pause_option.dart';
 import 'package:move_well_app/features/settings/models/user_settings.dart';
@@ -15,6 +17,7 @@ import 'package:move_well_app/features/settings/view_models/settings_view_model.
 
 import '../auth/fakes.dart';
 import '../home/fakes.dart';
+import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
 import 'fakes.dart';
 
@@ -31,6 +34,8 @@ ProviderContainer _container(
       reminderSchedulerProvider.overrideWithValue(
         scheduler ?? FakeReminderScheduler(),
       ),
+      deliveryLogProvider.overrideWithValue(FakeDeliveryLog()),
+      reminderPreferencesProvider.overrideWithValue(FakeReminderPreferences()),
       homeRepositoryProvider.overrideWithValue(home ?? FakeHomeRepository()),
     ],
   );

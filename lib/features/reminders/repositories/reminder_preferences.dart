@@ -24,6 +24,14 @@ class ReminderPreferences {
       await _prefs.getBool(_askedKey) ?? false;
 
   Future<void> markPermissionAsked() => _prefs.setBool(_askedKey, true);
+
+  /// Removes every reminder preference. Used by log out and the no-session
+  /// first run so the device keeps nothing from a previous install or user.
+  Future<void> clear() async {
+    await _prefs.remove(_packKey);
+    await _prefs.remove(_roastKey);
+    await _prefs.remove(_askedKey);
+  }
 }
 
 final reminderPreferencesProvider = Provider<ReminderPreferences>(

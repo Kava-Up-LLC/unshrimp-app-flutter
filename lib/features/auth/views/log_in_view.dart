@@ -34,6 +34,8 @@ class LogInView extends ConsumerWidget {
                   'assets/images/icon_round.png',
                   width: 128,
                   height: 128,
+                  // Decode near the painted size (128 logical px up to 3x).
+                  cacheWidth: 384,
                   fit: BoxFit.cover,
                 ),
               ),

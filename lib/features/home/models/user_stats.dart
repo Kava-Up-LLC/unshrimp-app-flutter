@@ -9,6 +9,7 @@ class UserStats {
     required this.ignoredCount,
     required this.roastLevel,
     required this.roastPending,
+    this.dailyGoal = 0,
   });
 
   /// Highest roast level; a fully drained Spine Battery (0% charge).
@@ -26,6 +27,9 @@ class UserStats {
   final int roastLevel;
   final bool roastPending;
 
+  /// The user's daily break goal (from `user_settings`); 0 when unknown.
+  final int dailyGoal;
+
   factory UserStats.fromJson(Map<String, dynamic> json) {
     int asInt(Object? value) => (value as num?)?.toInt() ?? 0;
 
@@ -38,6 +42,7 @@ class UserStats {
       ignoredCount: asInt(json['ignored_count']),
       roastLevel: asInt(json['roast_level']),
       roastPending: json['roast_pending'] == true,
+      dailyGoal: asInt(json['daily_goal']),
     );
   }
 }

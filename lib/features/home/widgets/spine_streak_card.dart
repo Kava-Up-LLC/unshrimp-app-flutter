@@ -25,6 +25,8 @@ class SpineStreakCard extends StatelessWidget {
                 children: [
                   Text(
                     'Spine Streak',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
@@ -32,6 +34,8 @@ class SpineStreakCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '$currentStreak $days',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       color: colors.tertiary,
                       fontWeight: FontWeight.bold,

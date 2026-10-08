@@ -50,6 +50,12 @@ class HomeViewModel extends AsyncNotifier<UserStats> {
     state = await AsyncValue.guard(build);
   }
 
+  /// Pull-to-refresh: reload without flipping to the loading state, so the
+  /// current content stays on screen under the RefreshIndicator's own spinner.
+  Future<void> reload() async {
+    state = await AsyncValue.guard(build);
+  }
+
   /// Replaces Home's stats with a row a Cloud Code mutation just returned, so
   /// Home reflects a break or ignore without recomputing anything locally.
   void applyStats(UserStats stats) => state = AsyncData(stats);

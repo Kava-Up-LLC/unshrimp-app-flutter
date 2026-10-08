@@ -59,7 +59,10 @@ class HomeView extends ConsumerWidget {
       ),
       body: SafeArea(
         child: switch (stats) {
-          AsyncData(:final value) => _HomeContent(stats: value),
+          AsyncData(:final value) => RefreshIndicator(
+            onRefresh: viewModel.reload,
+            child: _HomeContent(stats: value),
+          ),
           AsyncError(:final error) => _HomeError(
             message: error is AuthException
                 ? error.message
@@ -83,10 +86,14 @@ class _HomeContent extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListView(
+      // Always scrollable so the pull-to-refresh works even when the cards fit.
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       children: [
         Text(
           'Hi ${stats.name}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -96,7 +103,10 @@ class _HomeContent extends StatelessWidget {
         const SizedBox(height: 16),
         SpineBatteryCard(roastLevel: stats.roastLevel),
         const SizedBox(height: 16),
-        BreaksTodayCard(breaksToday: stats.breaksToday),
+        BreaksTodayCard(
+          breaksToday: stats.breaksToday,
+          dailyGoal: stats.dailyGoal,
+        ),
         const SizedBox(height: 32),
         FilledButton.icon(
           onPressed: () =>

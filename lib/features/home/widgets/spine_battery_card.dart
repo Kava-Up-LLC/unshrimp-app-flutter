@@ -70,6 +70,8 @@ class SpineBatteryCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             _labels[charge],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSecondaryContainer,
             ),

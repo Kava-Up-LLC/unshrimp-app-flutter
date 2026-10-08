@@ -108,9 +108,11 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/icon_launcher.png"
+  # Launcher sources live outside assets/ so they are not shipped in the app
+  # bundle; only icon_round.png (and the runtime art) stay under assets/images/.
+  image_path: "tool/launcher_icons/icon_launcher.png"
   remove_alpha_ios: true
   min_sdk_android: 21
   adaptive_icon_background: "#46C6BF"
-  adaptive_icon_foreground: "assets/images/icon_foreground.png"
+  adaptive_icon_foreground: "tool/launcher_icons/icon_foreground.png"
   adaptive_icon_foreground_inset: 0

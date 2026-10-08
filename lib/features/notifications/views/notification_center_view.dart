@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../break/models/break_args.dart';
 import '../../break/models/break_source.dart';
+import '../models/app_notification.dart';
 import '../view_models/notification_center_view_model.dart';
 import '../widgets/notification_tile.dart';
 
@@ -48,6 +49,8 @@ class NotificationCenterView extends ConsumerWidget {
                       final notification = value[index];
                       return NotificationTile(
                         notification: notification,
+                        onLongPress: () =>
+                            _showActions(context, viewModel, notification),
                         onTap: () {
                           viewModel.opened(notification);
                           context.push(
@@ -82,4 +85,48 @@ class NotificationCenterView extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The long-press menu for one notification: mark read, mark all read, delete.
+/// A tap outside the sheet dismisses it without acting.
+void _showActions(
+  BuildContext context,
+  NotificationCenterViewModel viewModel,
+  AppNotification notification,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!notification.read)
+            ListTile(
+              leading: const Icon(Icons.mark_email_read_outlined),
+              title: const Text('Mark as read'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                viewModel.markRead(notification);
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.done_all),
+            title: const Text('Mark all as read'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              viewModel.markAllRead();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('Delete'),
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              viewModel.delete(notification);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }

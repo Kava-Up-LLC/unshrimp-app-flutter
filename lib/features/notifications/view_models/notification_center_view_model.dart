@@ -47,6 +47,56 @@ class NotificationCenterViewModel extends AsyncNotifier<List<AppNotification>> {
     }
   }
 
+  /// The long-press "mark as read" action — the same as tapping a tile, but
+  /// without opening the break.
+  Future<void> markRead(AppNotification notification) => opened(notification);
+
+  /// Marks every notification read at once; reverts if the server rejects it.
+  Future<void> markAllRead() async {
+    final current = state.value;
+    if (current == null || current.every((n) => n.read)) return;
+    final previous = current;
+    final updated = [
+      for (final n in current) n.read ? n : n.copyWith(read: true),
+    ];
+    state = AsyncData(updated);
+    _shareUnread(updated);
+    try {
+      await ref
+          .read(notificationsRepositoryProvider)
+          .markAllRead(await _token());
+    } on AuthException {
+      if (ref.mounted) {
+        state = AsyncData(previous);
+        _shareUnread(previous);
+      }
+    }
+  }
+
+  /// Soft-deletes one notification, removing it from the list at once; reverts
+  /// if the server rejects it.
+  Future<void> delete(AppNotification notification) async {
+    final current = state.value;
+    if (current == null) return;
+    final previous = current;
+    final updated = [
+      for (final n in current)
+        if (n.id != notification.id) n,
+    ];
+    state = AsyncData(updated);
+    _shareUnread(updated);
+    try {
+      await ref
+          .read(notificationsRepositoryProvider)
+          .delete(await _token(), notification.id);
+    } on AuthException {
+      if (ref.mounted) {
+        state = AsyncData(previous);
+        _shareUnread(previous);
+      }
+    }
+  }
+
   void _setRead(int id, bool read) {
     final current = state.value;
     if (current == null) return;

@@ -43,6 +43,8 @@ class FakeNotificationsRepository implements NotificationsRepository {
   AuthException? error;
   final logged = <List<DeliveredReminder>>[];
   final markedRead = <int>[];
+  final deleted = <int>[];
+  int markAllReadCalls = 0;
 
   @override
   Future<void> log(String token, List<DeliveredReminder> reminders) async {
@@ -75,6 +77,22 @@ class FakeNotificationsRepository implements NotificationsRepository {
     markedRead.add(id);
     final i = rows.indexWhere((n) => n.id == id);
     rows[i] = rows[i].copyWith(read: true);
+  }
+
+  @override
+  Future<void> markAllRead(String token) async {
+    if (error != null) throw error!;
+    markAllReadCalls++;
+    for (var i = 0; i < rows.length; i++) {
+      rows[i] = rows[i].copyWith(read: true);
+    }
+  }
+
+  @override
+  Future<void> delete(String token, int id) async {
+    if (error != null) throw error!;
+    deleted.add(id);
+    rows.removeWhere((n) => n.id == id);
   }
 }
 

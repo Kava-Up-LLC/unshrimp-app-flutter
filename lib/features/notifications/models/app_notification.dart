@@ -8,6 +8,7 @@ class AppNotification {
     required this.pack,
     required this.sentAt,
     required this.read,
+    this.wasIgnored = false,
     this.reminderKey,
   });
 
@@ -20,6 +21,9 @@ class AppNotification {
   final DateTime sentAt;
   final bool read;
 
+  /// True when this reminder was reconciled as ignored (the user let it lapse).
+  final bool wasIgnored;
+
   /// Key of the scheduled reminder behind this row; null for older rows.
   final String? reminderKey;
 
@@ -30,6 +34,7 @@ class AppNotification {
     pack: pack,
     sentAt: sentAt,
     read: read ?? this.read,
+    wasIgnored: wasIgnored,
     reminderKey: reminderKey,
   );
 
@@ -43,6 +48,7 @@ class AppNotification {
             DateTime.tryParse(json['sent_at']?.toString() ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         read: json['read'] == true,
+        wasIgnored: json['was_ignored'] == true,
         reminderKey: json['reminder_key']?.toString(),
       );
 }

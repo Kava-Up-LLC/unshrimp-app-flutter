@@ -111,4 +111,63 @@ void main() {
       isFalse,
     );
   });
+
+  test('mark all read marks every row read', () async {
+    final rows = FakeNotificationsRepository(
+      rows: [
+        notification(1, DateTime.utc(2026, 9, 29, 10)),
+        notification(2, DateTime.utc(2026, 9, 29, 11)),
+      ],
+    );
+    final c = _container(rows);
+    await c.read(notificationCenterViewModelProvider.future);
+
+    await c.read(notificationCenterViewModelProvider.notifier).markAllRead();
+
+    expect(rows.markAllReadCalls, 1);
+    expect(
+      c
+          .read(notificationCenterViewModelProvider)
+          .requireValue
+          .every((n) => n.read),
+      isTrue,
+    );
+  });
+
+  test('delete removes the row from the list', () async {
+    final rows = FakeNotificationsRepository(
+      rows: [
+        notification(1, DateTime.utc(2026, 9, 29, 10)),
+        notification(2, DateTime.utc(2026, 9, 29, 11)),
+      ],
+    );
+    final c = _container(rows);
+    final list = await c.read(notificationCenterViewModelProvider.future);
+
+    await c
+        .read(notificationCenterViewModelProvider.notifier)
+        .delete(list.firstWhere((n) => n.id == 1));
+
+    expect(rows.deleted, [1]);
+    expect(
+      c.read(notificationCenterViewModelProvider).requireValue.map((n) => n.id),
+      [2],
+    );
+  });
+
+  test('a rejected delete restores the row', () async {
+    final rows = FakeNotificationsRepository(
+      rows: [notification(1, DateTime.utc(2026, 9, 29, 10))],
+    );
+    final c = _container(rows);
+    final list = await c.read(notificationCenterViewModelProvider.future);
+    rows.error = const AuthException(code: 'NOT_FOUND', message: 'gone');
+
+    await c.read(notificationCenterViewModelProvider.notifier).delete(list.single);
+
+    expect(
+      c.read(notificationCenterViewModelProvider).requireValue.map((n) => n.id),
+      [1],
+    );
+  });
 }

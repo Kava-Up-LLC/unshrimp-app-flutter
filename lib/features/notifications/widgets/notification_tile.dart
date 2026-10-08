@@ -9,25 +9,34 @@ class NotificationTile extends StatelessWidget {
     super.key,
     required this.notification,
     required this.onTap,
+    this.onLongPress,
   });
 
   final AppNotification notification;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final unread = !notification.read;
+    // The user let this reminder lapse: mark it in the coral side of the
+    // palette (the Posture Roast / shrimp colour), read or not.
+    final ignored = notification.wasIgnored;
+    final title = notification.title.trim();
 
     return Material(
-      color: unread
+      color: ignored
+          ? colors.secondaryContainer.withValues(alpha: 0.45)
+          : unread
           ? colors.primaryContainer.withValues(alpha: 0.45)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
           child: Row(
@@ -38,8 +47,16 @@ class NotificationTile extends StatelessWidget {
                 child: Icon(
                   Icons.circle,
                   size: 10,
-                  color: unread ? colors.primary : Colors.transparent,
-                  semanticLabel: unread ? 'Unread' : null,
+                  color: ignored
+                      ? colors.secondary
+                      : unread
+                      ? colors.primary
+                      : Colors.transparent,
+                  semanticLabel: ignored
+                      ? 'Ignored'
+                      : unread
+                      ? 'Unread'
+                      : null,
                 ),
               ),
               const SizedBox(width: 10),
@@ -47,21 +64,54 @@ class NotificationTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (title.isNotEmpty) ...[
+                      Text(
+                        title,
+                        style: textTheme.bodyLarge?.copyWith(
+                          fontWeight: unread
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
                     Text(
                       notification.body,
-                      style: textTheme.bodyLarge?.copyWith(
-                        fontWeight: unread ? FontWeight.w700 : FontWeight.w400,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: unread && title.isEmpty
+                            ? FontWeight.w700
+                            : FontWeight.w400,
                         color: unread
                             ? colors.onSurface
                             : colors.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${_formatTime(notification.sentAt.toLocal())} · ${notification.pack}',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          _formatTime(notification.sentAt.toLocal()),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                        if (ignored) ...[
+                          Text(
+                            '  ·  ',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            'Ignored',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.secondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),

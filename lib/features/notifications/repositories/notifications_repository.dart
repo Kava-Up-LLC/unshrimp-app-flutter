@@ -31,6 +31,15 @@ class NotificationsRepository {
 
   Future<void> markRead(String token, int id) =>
       _cloud.call('mark_notification_read', {'token': token, 'id': id});
+
+  Future<void> markAllRead(String token) =>
+      _cloud.call('mark_all_notifications_read', {'token': token});
+
+  /// Soft-deletes one row (sets `hidden_at`) so it leaves the list but stays
+  /// visible to `get_pending_reminders` — a hard delete could silently cancel
+  /// an un-reconciled ignore the user still owes.
+  Future<void> delete(String token, int id) =>
+      _cloud.call('delete_notification', {'token': token, 'id': id});
 }
 
 final notificationsRepositoryProvider = Provider<NotificationsRepository>(

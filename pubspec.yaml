@@ -44,10 +44,15 @@ dependencies:
   flutter_timezone: ^5.1.0
   shared_preferences: ^2.5.5
   share_plus: ^13.3.1
+  package_info_plus: ^10.2.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  change_app_package_name: ^1.4.0
+  # Test-only: the in-memory async store for cache tests (no plugin at runtime).
+  shared_preferences_platform_interface: ^2.4.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

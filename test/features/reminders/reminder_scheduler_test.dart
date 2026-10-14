@@ -1,12 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/notifications/services/notification_sync.dart';
-import 'package:move_well_app/features/reminders/models/reminder_payload.dart';
-import 'package:move_well_app/features/reminders/repositories/sarcasm_pack_repository.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
-import 'package:move_well_app/features/settings/models/user_settings.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/notifications/services/notification_sync.dart';
+import 'package:unshrimp_app/features/reminders/models/reminder_payload.dart';
+import 'package:unshrimp_app/features/reminders/repositories/sarcasm_pack_repository.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/settings/models/user_settings.dart';
 
 import '../auth/fakes.dart';
 import '../notifications/fakes.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/notifications/models/app_notification.dart';
-import 'package:move_well_app/features/notifications/models/scheduled_reminder.dart';
-import 'package:move_well_app/features/notifications/services/notification_sync.dart';
-import 'package:move_well_app/features/notifications/services/reminder_opened_marker.dart';
+import 'package:unshrimp_app/features/notifications/models/app_notification.dart';
+import 'package:unshrimp_app/features/notifications/models/scheduled_reminder.dart';
+import 'package:unshrimp_app/features/notifications/services/notification_sync.dart';
+import 'package:unshrimp_app/features/notifications/services/reminder_opened_marker.dart';
 
 import '../auth/fakes.dart';
 import '../reminders/fakes.dart';

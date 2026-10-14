@@ -1,10 +1,10 @@
 import 'package:appambit_sdk_flutter/appambit_sdk_flutter_method_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/onboarding/models/question_option.dart';
-import 'package:move_well_app/features/onboarding/models/question_type.dart';
-import 'package:move_well_app/features/onboarding/repositories/fallback_onboarding_questions.dart';
-import 'package:move_well_app/features/onboarding/repositories/onboarding_content_repository.dart';
+import 'package:unshrimp_app/features/onboarding/models/question_option.dart';
+import 'package:unshrimp_app/features/onboarding/models/question_type.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/fallback_onboarding_questions.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/onboarding_content_repository.dart';
 
 const _cms = MethodChannel('com.appambit/cms');
 

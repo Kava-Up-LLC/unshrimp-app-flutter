@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/roast/repositories/fallback_roast_lines.dart';
-import 'package:move_well_app/features/roast/repositories/roast_lines_repository.dart';
+import 'package:unshrimp_app/features/roast/repositories/fallback_roast_lines.dart';
+import 'package:unshrimp_app/features/roast/repositories/roast_lines_repository.dart';
 
 import '../reminders/fakes.dart';
 

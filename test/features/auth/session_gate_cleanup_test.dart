@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/auth/models/session_status.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/auth/view_models/session_gate_view_model.dart';
-import 'package:move_well_app/features/notifications/models/scheduled_reminder.dart';
-import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/auth/models/session_status.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/auth/view_models/session_gate_view_model.dart';
+import 'package:unshrimp_app/features/notifications/models/scheduled_reminder.dart';
+import 'package:unshrimp_app/features/notifications/repositories/delivery_log.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 
 import 'fakes.dart';
 import '../notifications/fakes.dart';

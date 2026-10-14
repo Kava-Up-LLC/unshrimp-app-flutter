@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// MoveWell palette.
+/// Unshrimp palette.
 ///
 /// - Teal: movement, health, "take a break" (primary actions).
 /// - Coral: the shrimp posture / Posture Roast / Spine Battery (shame, warnings).

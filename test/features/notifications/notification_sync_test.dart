@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/notifications/models/scheduled_reminder.dart';
-import 'package:move_well_app/features/notifications/services/notification_sync.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/notifications/models/scheduled_reminder.dart';
+import 'package:unshrimp_app/features/notifications/services/notification_sync.dart';
 
 import '../auth/fakes.dart';
 import '../reminders/fakes.dart';

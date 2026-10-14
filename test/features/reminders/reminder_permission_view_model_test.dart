@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
-import 'package:move_well_app/features/reminders/view_models/reminder_permission_view_model.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/reminders/view_models/reminder_permission_view_model.dart';
 
 import 'fakes.dart';
 

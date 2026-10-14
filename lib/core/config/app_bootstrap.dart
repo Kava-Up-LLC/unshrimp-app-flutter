@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/update_gate/view_models/version_gate.dart';
-import 'move_well_app.dart';
+import 'unshrimp_app.dart';
 
 /// Initializes environment, AppAmbit and Riverpod, then launches the app.
 class AppBootstrap {
@@ -36,6 +36,6 @@ class AppBootstrap {
     // isUpdateRequired).
     final updateRequired = await isUpdateRequired();
 
-    runApp(ProviderScope(child: MoveWellApp(updateRequired: updateRequired)));
+    runApp(ProviderScope(child: UnshrimpApp(updateRequired: updateRequired)));
   }
 }

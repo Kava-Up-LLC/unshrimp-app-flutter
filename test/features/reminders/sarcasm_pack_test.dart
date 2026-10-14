@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/reminders/models/sarcasm_pack.dart';
-import 'package:move_well_app/features/reminders/repositories/fallback_sarcasm_lines.dart';
-import 'package:move_well_app/features/reminders/repositories/sarcasm_pack_repository.dart';
+import 'package:unshrimp_app/features/reminders/models/sarcasm_pack.dart';
+import 'package:unshrimp_app/features/reminders/repositories/fallback_sarcasm_lines.dart';
+import 'package:unshrimp_app/features/reminders/repositories/sarcasm_pack_repository.dart';
 
 import 'fakes.dart';
 

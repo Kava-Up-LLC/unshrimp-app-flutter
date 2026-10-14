@@ -6,7 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../shared/widgets/submit_button.dart';
 import '../view_models/reminder_permission_view_model.dart';
 
-/// Shown once before Home: explains why MoveWell needs notifications, then
+/// Shown once before Home: explains why Unshrimp needs notifications, then
 /// hands over to the OS prompt.
 class ReminderPermissionView extends ConsumerWidget {
   const ReminderPermissionView({super.key});

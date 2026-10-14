@@ -2,13 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_prefs.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/home/repositories/home_repository.dart';
-import 'package:move_well_app/features/reconcile/models/pending_reminder.dart';
-import 'package:move_well_app/features/reconcile/models/reconcile_status.dart';
-import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
-import 'package:move_well_app/features/reconcile/view_models/reconcile_view_model.dart';
-import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
+import 'package:unshrimp_app/features/reconcile/models/pending_reminder.dart';
+import 'package:unshrimp_app/features/reconcile/models/reconcile_status.dart';
+import 'package:unshrimp_app/features/reconcile/repositories/reconcile_repository.dart';
+import 'package:unshrimp_app/features/reconcile/view_models/reconcile_view_model.dart';
+import 'package:unshrimp_app/features/settings/repositories/settings_repository.dart';
 
 import '../auth/fakes.dart';
 import '../home/fakes.dart';

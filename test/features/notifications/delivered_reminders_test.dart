@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/notifications/models/scheduled_reminder.dart';
-import 'package:move_well_app/features/notifications/services/delivered_reminders.dart';
+import 'package:unshrimp_app/features/notifications/models/scheduled_reminder.dart';
+import 'package:unshrimp_app/features/notifications/services/delivered_reminders.dart';
 
 final _scheduledAt = DateTime(2026, 9, 29, 8);
 

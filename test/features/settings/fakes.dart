@@ -1,7 +1,7 @@
-import 'package:move_well_app/core/cache/cached_read.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/settings/models/user_settings.dart';
-import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
+import 'package:unshrimp_app/core/cache/cached_read.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/settings/models/user_settings.dart';
+import 'package:unshrimp_app/features/settings/repositories/settings_repository.dart';
 
 const testSettings = UserSettings(
   activeStart: '09:00',

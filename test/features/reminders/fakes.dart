@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:move_well_app/core/analytics/event_log.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
-import 'package:move_well_app/features/settings/models/user_settings.dart';
+import 'package:unshrimp_app/core/analytics/event_log.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/settings/models/user_settings.dart';
 
 /// Records what the view models ask of the scheduler.
 class FakeReminderScheduler implements ReminderScheduler {

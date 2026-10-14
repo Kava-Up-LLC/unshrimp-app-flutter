@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/cache_status.dart';
-import 'package:move_well_app/features/home/widgets/offline_indicator.dart';
+import 'package:unshrimp_app/core/cache/cache_status.dart';
+import 'package:unshrimp_app/features/home/widgets/offline_indicator.dart';
 
 class _FixedStatus extends CacheStatusNotifier {
   _FixedStatus(this._status);

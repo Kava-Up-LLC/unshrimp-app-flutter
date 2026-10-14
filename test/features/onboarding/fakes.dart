@@ -1,9 +1,9 @@
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/onboarding/models/onboarding_question.dart';
-import 'package:move_well_app/features/onboarding/models/seeded_settings.dart';
-import 'package:move_well_app/features/onboarding/repositories/fallback_onboarding_questions.dart';
-import 'package:move_well_app/features/onboarding/repositories/onboarding_content_repository.dart';
-import 'package:move_well_app/features/onboarding/repositories/onboarding_repository.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/onboarding/models/onboarding_question.dart';
+import 'package:unshrimp_app/features/onboarding/models/seeded_settings.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/fallback_onboarding_questions.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/onboarding_content_repository.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/onboarding_repository.dart';
 
 class FakeOnboardingContentRepository implements OnboardingContentRepository {
   @override

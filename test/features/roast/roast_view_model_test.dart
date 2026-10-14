@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/analytics/event_log.dart';
-import 'package:move_well_app/features/roast/repositories/roast_lines_repository.dart';
-import 'package:move_well_app/features/roast/view_models/roast_view_model.dart';
+import 'package:unshrimp_app/core/analytics/event_log.dart';
+import 'package:unshrimp_app/features/roast/repositories/roast_lines_repository.dart';
+import 'package:unshrimp_app/features/roast/view_models/roast_view_model.dart';
 
 import '../reminders/fakes.dart';
 

@@ -1,7 +1,7 @@
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/auth/models/auth_session.dart';
-import 'package:move_well_app/features/auth/repositories/auth_repository.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/auth/models/auth_session.dart';
+import 'package:unshrimp_app/features/auth/repositories/auth_repository.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
 
 class FakeTokenStorage implements TokenStorage {
   FakeTokenStorage([this.token, this.expiresAt]);

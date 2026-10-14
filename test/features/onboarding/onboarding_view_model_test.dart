@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/onboarding/models/onboarding_state.dart';
-import 'package:move_well_app/features/onboarding/repositories/onboarding_content_repository.dart';
-import 'package:move_well_app/features/onboarding/repositories/onboarding_repository.dart';
-import 'package:move_well_app/features/onboarding/view_models/onboarding_view_model.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/onboarding/models/onboarding_state.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/onboarding_content_repository.dart';
+import 'package:unshrimp_app/features/onboarding/repositories/onboarding_repository.dart';
+import 'package:unshrimp_app/features/onboarding/view_models/onboarding_view_model.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 
 import '../auth/fakes.dart';
 import '../reminders/fakes.dart';

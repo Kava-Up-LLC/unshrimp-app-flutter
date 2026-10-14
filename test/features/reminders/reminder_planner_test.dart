@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/reminders/models/reminder_slot.dart';
-import 'package:move_well_app/features/reminders/services/reminder_planner.dart';
-import 'package:move_well_app/features/settings/models/user_settings.dart';
+import 'package:unshrimp_app/features/reminders/models/reminder_slot.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_planner.dart';
+import 'package:unshrimp_app/features/settings/models/user_settings.dart';
 
 final _now = DateTime.utc(2026, 9, 29, 12);
 

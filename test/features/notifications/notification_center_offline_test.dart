@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/cache_status.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
-import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
-import 'package:move_well_app/features/notifications/services/notification_sync.dart';
-import 'package:move_well_app/features/notifications/view_models/notification_center_view_model.dart';
+import 'package:unshrimp_app/core/cache/cache_status.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/notifications/repositories/delivery_log.dart';
+import 'package:unshrimp_app/features/notifications/repositories/notifications_repository.dart';
+import 'package:unshrimp_app/features/notifications/services/notification_sync.dart';
+import 'package:unshrimp_app/features/notifications/view_models/notification_center_view_model.dart';
 
 import '../auth/fakes.dart';
 import 'fakes.dart';

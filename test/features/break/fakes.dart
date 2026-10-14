@@ -1,5 +1,5 @@
-import 'package:move_well_app/features/exercises/models/exercise.dart';
-import 'package:move_well_app/features/exercises/repositories/exercises_repository.dart';
+import 'package:unshrimp_app/features/exercises/models/exercise.dart';
+import 'package:unshrimp_app/features/exercises/repositories/exercises_repository.dart';
 
 const neckStretch = Exercise(
   zone: 'neck',

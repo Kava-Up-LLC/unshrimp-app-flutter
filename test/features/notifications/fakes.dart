@@ -1,10 +1,10 @@
-import 'package:move_well_app/core/cache/cached_read.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/notifications/models/app_notification.dart';
-import 'package:move_well_app/features/notifications/models/delivered_reminder.dart';
-import 'package:move_well_app/features/notifications/models/scheduled_reminder.dart';
-import 'package:move_well_app/features/notifications/repositories/delivery_log.dart';
-import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
+import 'package:unshrimp_app/core/cache/cached_read.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/notifications/models/app_notification.dart';
+import 'package:unshrimp_app/features/notifications/models/delivered_reminder.dart';
+import 'package:unshrimp_app/features/notifications/models/scheduled_reminder.dart';
+import 'package:unshrimp_app/features/notifications/repositories/delivery_log.dart';
+import 'package:unshrimp_app/features/notifications/repositories/notifications_repository.dart';
 
 /// In-memory [DeliveryLog].
 class FakeDeliveryLog implements DeliveryLog {

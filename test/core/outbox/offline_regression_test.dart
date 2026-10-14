@@ -1,16 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/cache_status.dart';
-import 'package:move_well_app/core/cache/cache_user_id.dart';
-import 'package:move_well_app/core/cache/cached_read.dart';
-import 'package:move_well_app/core/outbox/outbox.dart';
-import 'package:move_well_app/core/outbox/queued_op.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/home/models/user_stats.dart';
-import 'package:move_well_app/features/home/repositories/home_repository.dart';
-import 'package:move_well_app/features/home/view_models/home_view_model.dart';
-import 'package:move_well_app/features/roast/view_models/roast_gate_provider.dart';
+import 'package:unshrimp_app/core/cache/cache_status.dart';
+import 'package:unshrimp_app/core/cache/cache_user_id.dart';
+import 'package:unshrimp_app/core/cache/cached_read.dart';
+import 'package:unshrimp_app/core/outbox/outbox.dart';
+import 'package:unshrimp_app/core/outbox/queued_op.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/home/models/user_stats.dart';
+import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
+import 'package:unshrimp_app/features/home/view_models/home_view_model.dart';
+import 'package:unshrimp_app/features/roast/view_models/roast_gate_provider.dart';
 
 import '../../features/auth/fakes.dart';
 import '../../support/in_memory_prefs.dart';
@@ -90,7 +90,7 @@ ProviderContainer _container(_FakeHome home) {
     ],
   );
   addTearDown(c.dispose);
-  // The always-alive wiring MoveWellApp holds.
+  // The always-alive wiring UnshrimpApp holds.
   c.listen(roastReleaseFeederProvider, (_, _) {});
   c.listen(outboxProvider, (_, _) {});
   c.listen(outboxRunnerProvider, (_, _) {});

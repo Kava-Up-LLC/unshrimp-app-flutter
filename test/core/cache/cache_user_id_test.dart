@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/cache_user_id.dart';
+import 'package:unshrimp_app/core/cache/cache_user_id.dart';
 
 String _token(Map<String, dynamic> payload) {
   String seg(Object o) =>

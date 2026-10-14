@@ -1,6 +1,6 @@
-import 'package:move_well_app/features/home/models/ignore_result.dart';
-import 'package:move_well_app/features/reconcile/models/pending_reminder.dart';
-import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
+import 'package:unshrimp_app/features/home/models/ignore_result.dart';
+import 'package:unshrimp_app/features/reconcile/models/pending_reminder.dart';
+import 'package:unshrimp_app/features/reconcile/repositories/reconcile_repository.dart';
 
 import '../home/fakes.dart';
 

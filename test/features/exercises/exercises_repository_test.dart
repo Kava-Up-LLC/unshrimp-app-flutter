@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:appambit_sdk_flutter/appambit_sdk_flutter_method_channel.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/exercises/repositories/exercises_repository.dart';
-import 'package:move_well_app/features/exercises/repositories/fallback_exercises.dart';
+import 'package:unshrimp_app/features/exercises/repositories/exercises_repository.dart';
+import 'package:unshrimp_app/features/exercises/repositories/fallback_exercises.dart';
 
 const _cms = MethodChannel('com.appambit/cms');
 

@@ -1,7 +1,7 @@
 import 'package:appambit_sdk_flutter/appambit_sdk_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cloud/cloud_functions.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/core/cloud/cloud_functions.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
 
 CloudCodeResponse _ok(Map<String, dynamic> data) =>
     CloudCodeResponse(data: data, statusCode: 200, requestId: null, headers: const {});

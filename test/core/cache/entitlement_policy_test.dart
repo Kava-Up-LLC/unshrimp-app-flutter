@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/entitlement_policy.dart';
+import 'package:unshrimp_app/core/cache/entitlement_policy.dart';
 
 void main() {
   test('defaults to 7 days when Remote Config has no value', () async {

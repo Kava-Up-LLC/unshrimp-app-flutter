@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/update_gate/view_models/version_gate.dart';
+import 'package:unshrimp_app/features/update_gate/view_models/version_gate.dart';
 
 void main() {
   // The running build; tests inject it so no real PackageInfo is needed.

@@ -1,6 +1,6 @@
-# MoveWell exercise dataset (office / desk posture breaks)
+# Unshrimp exercise dataset (office / desk posture breaks)
 
-Office-appropriate stretches for the MoveWell/ShrimpFix break screen. **Every exercise
+Office-appropriate stretches for the Unshrimp/ShrimpFix break screen. **Every exercise
 is done standing or seated in a chair. No floor, mat, or lying poses.** Grouped by the
 app's zones (`neck`, `shoulders`, `lower_back`, `wrists`, `none`).
 

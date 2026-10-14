@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/reminders/models/reminder_payload.dart';
+import 'package:unshrimp_app/features/reminders/models/reminder_payload.dart';
 
 void main() {
   test('round-trips zone and key', () {

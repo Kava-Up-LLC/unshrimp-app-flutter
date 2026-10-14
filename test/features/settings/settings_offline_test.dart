@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/cache/cache_status.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
-import 'package:move_well_app/features/settings/view_models/settings_view_model.dart';
+import 'package:unshrimp_app/core/cache/cache_status.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/settings/repositories/settings_repository.dart';
+import 'package:unshrimp_app/features/settings/view_models/settings_view_model.dart';
 
 import '../auth/fakes.dart';
 import 'fakes.dart';

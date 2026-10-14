@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/core/router/app_routes.dart';
-import 'package:move_well_app/core/router/roast_redirect.dart';
+import 'package:unshrimp_app/core/router/app_routes.dart';
+import 'package:unshrimp_app/core/router/roast_redirect.dart';
 
 void main() {
   group('roastRedirect', () {

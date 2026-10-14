@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/break/services/exercise_picker.dart';
-import 'package:move_well_app/features/exercises/models/exercise.dart';
+import 'package:unshrimp_app/features/break/services/exercise_picker.dart';
+import 'package:unshrimp_app/features/exercises/models/exercise.dart';
 
 import 'fakes.dart';
 

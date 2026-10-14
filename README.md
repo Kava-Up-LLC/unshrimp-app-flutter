@@ -206,13 +206,13 @@ auth_register / auth_login ──► token (+ expires_at)
 
 **Required to ship as your own app:**
 
-- **App key** — your `APPAMBIT_APP_KEY` in `.env`.
+- **App keys** — your `APPAMBIT_APP_KEY_IOS` / `APPAMBIT_APP_KEY_ANDROID` in `.env`.
 - **App name** — user-visible name (currently *Unshrimp*): `pubspec.yaml`,
   Android `android/app/src/main/AndroidManifest.xml` (`android:label`), iOS
   `ios/Runner/Info.plist` (`CFBundleDisplayName`).
-- **Bundle id / applicationId** — Android `com.appambit.movewell`
-  (`android/app/build.gradle`), iOS bundle id in Xcode. The Dart package dir
-  stays `move_well_app`.
+- **Bundle id / applicationId** — Android `com.appambit.unshrimp`
+  (`android/app/build.gradle.kts`), iOS bundle id in Xcode. The Dart package is
+  `unshrimp_app` (`pubspec.yaml` `name`).
 - **Icons** — replace the sources and run `dart run flutter_launcher_icons`
   (config in `pubspec.yaml`).
 - **Backend** — your schema, functions and `AUTH_TOKEN_SECRET` (above).

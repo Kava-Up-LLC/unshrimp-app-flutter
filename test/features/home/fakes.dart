@@ -1,8 +1,8 @@
-import 'package:move_well_app/core/cache/cached_read.dart';
-import 'package:move_well_app/features/auth/models/auth_exception.dart';
-import 'package:move_well_app/features/home/models/ignore_result.dart';
-import 'package:move_well_app/features/home/models/user_stats.dart';
-import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:unshrimp_app/core/cache/cached_read.dart';
+import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
+import 'package:unshrimp_app/features/home/models/ignore_result.dart';
+import 'package:unshrimp_app/features/home/models/user_stats.dart';
+import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
 
 const testStats = UserStats(
   userId: 3,

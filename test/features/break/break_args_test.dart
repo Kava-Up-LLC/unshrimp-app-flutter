@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:move_well_app/features/break/models/break_args.dart';
-import 'package:move_well_app/features/break/models/break_source.dart';
+import 'package:unshrimp_app/features/break/models/break_args.dart';
+import 'package:unshrimp_app/features/break/models/break_source.dart';
 
 void main() {
   test('a reminder payload becomes the break route and back', () {

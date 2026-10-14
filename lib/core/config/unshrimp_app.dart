@@ -15,8 +15,8 @@ import '../theme/app_theme.dart';
 
 /// Root widget: wires the go_router instance, the app theme and reminder
 /// taps.
-class MoveWellApp extends ConsumerWidget {
-  const MoveWellApp({super.key, this.updateRequired = false});
+class UnshrimpApp extends ConsumerWidget {
+  const UnshrimpApp({super.key, this.updateRequired = false});
 
   /// When true, the build is below `min_supported_version`: the app shows only
   /// the blocking update wall and never mounts the router or its startup

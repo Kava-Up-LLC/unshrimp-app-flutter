@@ -5,23 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_prefs.dart';
-import 'package:move_well_app/core/analytics/event_log.dart';
-import 'package:move_well_app/core/cache/cached_read.dart';
-import 'package:move_well_app/core/config/move_well_app.dart';
-import 'package:move_well_app/features/auth/repositories/auth_repository.dart';
-import 'package:move_well_app/features/auth/repositories/token_storage.dart';
-import 'package:move_well_app/features/break/view_models/break_view_model.dart';
-import 'package:move_well_app/features/exercises/repositories/exercises_repository.dart';
-import 'package:move_well_app/features/home/models/ignore_result.dart';
-import 'package:move_well_app/features/home/models/user_stats.dart';
-import 'package:move_well_app/features/home/repositories/home_repository.dart';
-import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
-import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
-import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
-import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
-import 'package:move_well_app/features/roast/repositories/roast_lines_repository.dart';
-import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
+import 'package:unshrimp_app/core/analytics/event_log.dart';
+import 'package:unshrimp_app/core/cache/cached_read.dart';
+import 'package:unshrimp_app/core/config/unshrimp_app.dart';
+import 'package:unshrimp_app/features/auth/repositories/auth_repository.dart';
+import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
+import 'package:unshrimp_app/features/break/view_models/break_view_model.dart';
+import 'package:unshrimp_app/features/exercises/repositories/exercises_repository.dart';
+import 'package:unshrimp_app/features/home/models/ignore_result.dart';
+import 'package:unshrimp_app/features/home/models/user_stats.dart';
+import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
+import 'package:unshrimp_app/features/notifications/repositories/notifications_repository.dart';
+import 'package:unshrimp_app/features/reconcile/repositories/reconcile_repository.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_notifications.dart';
+import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
+import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
+import 'package:unshrimp_app/features/roast/repositories/roast_lines_repository.dart';
+import 'package:unshrimp_app/features/settings/repositories/settings_repository.dart';
 
 import '../auth/fakes.dart';
 import '../break/fakes.dart';
@@ -125,7 +125,7 @@ void main() {
           eventLogProvider.overrideWithValue(FakeEventLog()),
           breakTicksProvider.overrideWithValue(() => ticks.stream),
         ],
-        child: const MoveWellApp(),
+        child: const UnshrimpApp(),
       ),
     );
     await tester.pumpAndSettle();

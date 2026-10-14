@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-`move_well_app` (Unshrimp) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. User-visible app name is **Unshrimp** on both platforms (the Dart package dir stays `move_well_app`); Android `applicationId`/`namespace` is `com.appambit.movewell`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
+`unshrimp_app` (Unshrimp) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. User-visible app name is **Unshrimp** on both platforms (the Dart package is `unshrimp_app`); Android `applicationId`/`namespace` is `com.appambit.unshrimp`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
 
 Dart SDK constraint is `^3.11.0`, so newer syntax such as dot shorthands (`.fromSeed(...)`) is valid. Linting uses `flutter_lints` (`analysis_options.yaml`) with no custom rules.
 
@@ -25,7 +25,7 @@ dart run flutter_launcher_icons                   # regenerate app icons (config
 
 - `lib/main.dart` only calls `AppBootstrap.run()`.
 - `lib/core/config/app_bootstrap.dart`: loads `.env` (`flutter_dotenv`, file registered as an asset), starts the AppAmbit SDK with `APPAMBIT_APP_KEY`, and runs the app inside `ProviderScope`. `.env` is gitignored; `.env.example` is the template.
-- `lib/core/config/move_well_app.dart`: root `ConsumerWidget` with `MaterialApp.router`, reading `appRouterProvider` and `AppTheme.light` / `AppTheme.dark`.
+- `lib/core/config/unshrimp_app.dart`: root `ConsumerWidget` with `MaterialApp.router`, reading `appRouterProvider` and `AppTheme.light` / `AppTheme.dark`.
 - `lib/core/router/`: `app_routes.dart` holds path constants; `app_router.dart` exposes the single `GoRouter` via `appRouterProvider`. Every new view gets a constant in `AppRoutes` and a `GoRoute` here.
 - `lib/core/theme/`: `app_colors.dart` (palette) and `app_theme.dart` (Material 3 light/dark). Palette meaning: teal = primary/health/"take a break"; coral (`secondary`) = shrimp posture, Posture Roast, Spine Battery; amber (`tertiary`) = Spine Streak/achievements. Use `Theme.of(context).colorScheme`, not hardcoded colors.
 
@@ -33,7 +33,7 @@ dart run flutter_launcher_icons                   # regenerate app icons (config
 
 The Flutter SDK connects to the AppAmbit app "MoveWell App" (key in `.env`).
 
-The `jwt_auth` test function lives in a separate AppAmbit app (key `294f7dd6-987e-493b-b13c-dfdfd0cdcd3e`, accessed via the `appambit` MCP tools). It provides a linked SQLite database and Cloud Code (Node.js) functions.
+The `jwt_auth` test function lives in a separate AppAmbit app (key stored out of the repo, accessed via the `appambit` MCP tools). It provides a linked SQLite database and Cloud Code (Node.js) functions.
 
 - Cloud function `jwt_auth`: `{ email }` → signs an HS256 JWT (1h) and upserts the user into table `jwt_users`; `{ token }` → returns `{ valid, decoded | error }`. Secret `JWT_SECRET` is set as a function secret.
 - **Cloud functions cannot use npm packages.** Deploys accept only a single `index.js`; `import 'jsonwebtoken'` builds as `ready` but fails at runtime with `Cannot find package`. Use Node built-ins (`node:crypto`, `Buffer`) or pre-bundle into one file.

@@ -119,12 +119,12 @@ server-side), and land on Home.
 
 ## Backend setup (AppAmbit)
 
-This is the part the React Native and .NET MAUI starters don't cover. Three
+This is the part the React Native and .NET MAUI starters don't cover. Four
 pieces make the app yours:
 
 ### Cloud Code functions
 
-17 functions, all Node built-ins only (no npm at runtime), each verifying the
+15 functions, all Node built-ins only (no npm at runtime), each verifying the
 session itself. Full input/output table and the handler contract:
 **[cloud_functions/README.md](cloud_functions/README.md)**. Highlights:
 
@@ -151,14 +151,30 @@ your app:
 | Key | Type | Default | Used for |
 |---|---|---|---|
 | `sarcasm_pack` | string/JSON | a neutral pack | Reminder copy shown in the local notification and the break screen. |
+| `roast_lines` | JSON (array of strings) | first line, as fallback | Full-screen **Posture Roast** copy; one line is picked at random. Cached like `sarcasm_pack` so it still shows offline. Seed example in [`prompts.md`](prompts.md) (episode 4). |
 | `min_supported_version` | string | *(absent = permissive)* | **Kill switch.** A running version below this shows a blocking update screen. Missing/unreadable/failed fetch → the app runs normally. |
 | `entitlement_grace_days` | int | `7` | *Reserved (episode 6):* how long a last-known Pro entitlement is honoured offline. |
 | `trial_days` | int | `14` | *Reserved (episode 6):* Pro trial length. |
 | `pro_product_ids` | JSON | *(absent)* | *Reserved (episode 6):* store product ids. |
 
-> Exercise content (per pain zone) and the sarcasm packs are CMS/Remote Config
-> content you populate in the dashboard; the app ships a fallback set so it runs
-> before you add your own.
+### CMS content
+
+Two content types the app reads through the SDK. **Each ships a local fallback**
+(`lib/features/*/repositories/fallback_*`), so the app runs before you populate
+the CMS — but to make the content yours, create and seed both on your app:
+
+| Content type | Fields | Seeds | Fallback |
+|---|---|---|---|
+| `onboarding_questions` | `key`, `title`, `subtitle`, `type`, options | The 4 onboarding questions, in order. | `fallback_onboarding_questions.dart` |
+| `exercises` | `zone`, `title`, `steps`, `media` | The office stretch set keyed by pain zone (+ 2 wrist entries). | `fallback_exercises.dart` + bundled media in `assets/dataset/` |
+
+The exact seed copy and values live in [`prompts.md`](prompts.md) (episode 2 for
+the onboarding questions, episode 3 for the exercises) and in
+[`assets/dataset/exercises.json`](assets/dataset/). Keep the CMS and the fallback
+in sync so the app shows the same content online and offline.
+
+> Verify whether your CMS stores animated GIFs before seeding `media`; if not,
+> use the static `-main.webp` per exercise. The two wrist exercises have no media.
 
 ## How the backend drives the app
 

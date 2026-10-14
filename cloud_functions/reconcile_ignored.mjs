@@ -39,6 +39,38 @@ const readToken = (ctx, token) => {
 
 const invalidToken = { error: 'INVALID_TOKEN', message: 'Your session has expired. Please log in again.' };
 
+// ---- Shared idempotency helper -- INLINED from cloud_functions/_applied_ops.mjs.
+// Deploys are a single file with no imports, so this is copied, not imported.
+// Keep in sync with that canonical source. See it for the full contract and the
+// episode-6 grant_entitlement note.
+const applyOnce = async (ctx, { opId, userId, fn, statements }) => {
+  if (typeof opId !== 'string' || opId.length === 0) {
+    await ctx.appambit.batch(statements, true);
+    return { applied: true };
+  }
+  try {
+    await ctx.appambit.batch(
+      [
+        {
+          sql: `INSERT INTO applied_ops (op_id, user_id, function, applied_at)
+                 VALUES (?, ?, ?, datetime('now'))`,
+          params: [opId, userId, fn],
+        },
+        ...statements,
+      ],
+      true,
+    );
+    return { applied: true };
+  } catch (err) {
+    const seen = await ctx.appambit.db(
+      'SELECT 1 FROM applied_ops WHERE op_id = ?',
+      [opId],
+    );
+    if ((seen.results[0].rows ?? []).length === 0) throw err; // genuine failure
+    return { applied: false }; // replay: rolled back, nothing changed
+  }
+};
+
 // ---- Active-window helpers (pure, exported for unit tests) -----------------
 //
 // active_start/active_end are the user's wall clock ("HH:mm") with no stored
@@ -114,7 +146,7 @@ const loadStats = async (ctx, userId) => {
 };
 
 export const handler = async (ctx) => {
-  const { token, ids, tz_offset_min: tzOffsetMin } = readInput(ctx);
+  const { token, ids, tz_offset_min: tzOffsetMin, op_id: opId } = readInput(ctx);
   const payload = readToken(ctx, token);
   if (!payload) return invalidToken;
 
@@ -146,37 +178,50 @@ export const handler = async (ctx) => {
   // so N is 0 and both statements are a no-op — the whole call is idempotent,
   // which is what makes the old register_ignore/mark_ignored double-count
   // (app dies, is backgrounded or loses the network between the two) impossible.
+  // roast_pending is set in the SAME transaction that moves the counters.
   const pendingCount = `(SELECT COUNT(*) FROM notifications
                            WHERE user_id = ? AND was_ignored IS NULL
                              AND id IN (${placeholders}))`;
-  await ctx.appambit.batch(
-    [
-      {
-        sql: `UPDATE user_stats
-                 SET ignored_count = ignored_count + ${pendingCount},
-                     roast_level = MIN(5, roast_level + ${pendingCount}),
-                     roast_pending = CASE
-                       WHEN ignored_count + ${pendingCount} >= ? THEN 1
-                       ELSE roast_pending
-                     END
-               WHERE user_id = ?`,
-        params: [
-          payload.sub, ...clean,
-          payload.sub, ...clean,
-          payload.sub, ...clean,
-          settings.roast_threshold,
-          payload.sub,
-        ],
-      },
-      {
-        sql: `UPDATE notifications
-                 SET was_ignored = 1
-               WHERE user_id = ? AND was_ignored IS NULL AND id IN (${placeholders})`,
-        params: [payload.sub, ...clean],
-      },
-    ],
-    true,
-  );
+  const statements = [
+    {
+      sql: `UPDATE user_stats
+               SET ignored_count = ignored_count + ${pendingCount},
+                   roast_level = MIN(5, roast_level + ${pendingCount}),
+                   roast_pending = CASE
+                     WHEN ignored_count + ${pendingCount} >= ? THEN 1
+                     ELSE roast_pending
+                   END
+             WHERE user_id = ?`,
+      params: [
+        payload.sub, ...clean,
+        payload.sub, ...clean,
+        payload.sub, ...clean,
+        settings.roast_threshold,
+        payload.sub,
+      ],
+    },
+    {
+      sql: `UPDATE notifications
+               SET was_ignored = 1
+             WHERE user_id = ? AND was_ignored IS NULL AND id IN (${placeholders})`,
+      params: [payload.sub, ...clean],
+    },
+  ];
+
+  // op_id makes a replayed flush harmless. On a replay the transaction rolls
+  // back and nothing moves; return the current row unchanged. (The call is also
+  // row-level idempotent — already-marked rows count for nothing — so a fresh
+  // op_id on the same ids is safe too.)
+  const { applied } = await applyOnce(ctx, {
+    opId,
+    userId: payload.sub,
+    fn: 'reconcile_ignored',
+    statements,
+  });
+  if (!applied) {
+    const current = (await loadStats(ctx, payload.sub)) ?? stats;
+    return { ...current, counted: 0, ignored: 0 };
+  }
 
   const updated = (await loadStats(ctx, payload.sub)) ?? stats;
   const counted = updated.ignored_count - stats.ignored_count;

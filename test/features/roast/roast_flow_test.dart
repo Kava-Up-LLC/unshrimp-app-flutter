@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/in_memory_prefs.dart';
 import 'package:move_well_app/core/analytics/event_log.dart';
 import 'package:move_well_app/core/config/move_well_app.dart';
 import 'package:move_well_app/core/theme/app_colors.dart';
@@ -13,6 +15,7 @@ import 'package:move_well_app/features/break/view_models/break_view_model.dart';
 import 'package:move_well_app/features/exercises/repositories/exercises_repository.dart';
 import 'package:move_well_app/features/home/models/user_stats.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
 import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
@@ -23,6 +26,7 @@ import 'package:move_well_app/features/settings/repositories/settings_repository
 import '../auth/fakes.dart';
 import '../break/fakes.dart';
 import '../home/fakes.dart';
+import '../notifications/fakes.dart';
 import '../reconcile/fakes.dart';
 import '../reminders/fakes.dart';
 import '../settings/fakes.dart';
@@ -50,6 +54,8 @@ const _cleared = UserStats(
 );
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   testWidgets('roast_pending routes to the roast; Fix my posture + Survived '
       'returns to Home cleared', (tester) async {
     tester.view.physicalSize = const Size(1290, 2796);
@@ -67,6 +73,9 @@ void main() {
           // Launch with roast_pending true; a survived break clears it.
           homeRepositoryProvider.overrideWithValue(
             FakeHomeRepository(stats: _pending, afterBreak: _cleared),
+          ),
+          notificationsRepositoryProvider.overrideWithValue(
+            FakeNotificationsRepository(),
           ),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
           settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),

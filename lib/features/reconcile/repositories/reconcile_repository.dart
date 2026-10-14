@@ -39,11 +39,13 @@ class ReconcileRepository {
     String token, {
     required List<int> ids,
     required int tzOffsetMin,
+    required String opId,
   }) async {
     final data = await _cloud.call('reconcile_ignored', {
       'token': token,
       'ids': ids,
       'tz_offset_min': tzOffsetMin,
+      'op_id': opId,
     }, retry: true);
     return IgnoreResult(
       ignored: (data['counted'] as num?)?.toInt() ?? 0,

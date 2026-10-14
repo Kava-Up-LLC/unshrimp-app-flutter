@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/in_memory_prefs.dart';
 import 'package:move_well_app/core/analytics/event_log.dart';
+import 'package:move_well_app/core/cache/cached_read.dart';
 import 'package:move_well_app/core/config/move_well_app.dart';
 import 'package:move_well_app/features/auth/repositories/auth_repository.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
@@ -12,6 +15,7 @@ import 'package:move_well_app/features/exercises/repositories/exercises_reposito
 import 'package:move_well_app/features/home/models/ignore_result.dart';
 import 'package:move_well_app/features/home/models/user_stats.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
+import 'package:move_well_app/features/notifications/repositories/notifications_repository.dart';
 import 'package:move_well_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
@@ -21,6 +25,7 @@ import 'package:move_well_app/features/settings/repositories/settings_repository
 
 import '../auth/fakes.dart';
 import '../break/fakes.dart';
+import '../notifications/fakes.dart';
 import '../reconcile/fakes.dart';
 import '../reminders/fakes.dart';
 import '../settings/fakes.dart';
@@ -49,7 +54,11 @@ class ServerHomeRepository implements HomeRepository {
   );
 
   @override
-  Future<UserStats> fetchStats(String token) async => _stats;
+  Future<CacheResult<UserStats>> fetchStats(String token) async =>
+      CacheResult(value: _stats, offline: false);
+
+  @override
+  Future<UserStats?> cachedStats(String token) async => null;
 
   @override
   Future<IgnoreResult> registerIgnore(
@@ -64,7 +73,7 @@ class ServerHomeRepository implements HomeRepository {
   }
 
   @override
-  Future<UserStats> registerBreak(String token) async {
+  Future<UserStats> registerBreak(String token, {required String opId}) async {
     ignoredCount = 0;
     roastLevel = (roastLevel - 1).clamp(0, UserStats.maxRoastLevel);
     breaksToday += 1;
@@ -74,6 +83,8 @@ class ServerHomeRepository implements HomeRepository {
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   testWidgets('Register ignore x3 -> roast -> Fix my posture -> Survived -> '
       'Home cleared', (tester) async {
     tester.view.physicalSize = const Size(1290, 2796);
@@ -90,6 +101,9 @@ void main() {
           reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(server),
+          notificationsRepositoryProvider.overrideWithValue(
+            FakeNotificationsRepository(),
+          ),
           tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
           settingsRepositoryProvider.overrideWithValue(FakeSettingsRepository()),
           exercisesRepositoryProvider.overrideWithValue(

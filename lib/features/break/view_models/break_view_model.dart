@@ -4,11 +4,12 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/analytics/event_log.dart';
-import '../../auth/models/auth_exception.dart';
+import '../../../core/cache/cache_user_id.dart';
+import '../../../core/outbox/op_id.dart';
+import '../../../core/outbox/outbox.dart';
+import '../../../core/outbox/queued_op.dart';
 import '../../auth/repositories/token_storage.dart';
 import '../../exercises/repositories/exercises_repository.dart';
-import '../../home/repositories/home_repository.dart';
-import '../../home/view_models/home_view_model.dart';
 import '../../notifications/services/reminder_opened_marker.dart';
 import '../../settings/repositories/settings_repository.dart';
 import '../models/break_args.dart';
@@ -116,20 +117,29 @@ class BreakViewModel extends AsyncNotifier<BreakState> {
     }
   }
 
-  /// Reports the completed break to the server (`register_break`) and pushes
-  /// the returned row into Home. Called once, when the user taps "Survived" at
-  /// 0. Best-effort: the break already happened, and Home re-fetches on mount,
-  /// so a failure here just means Home shows the fresh row (or an expired
-  /// session) a moment later instead of instantly.
+  /// Reports the completed break (`register_break`) through the write outbox.
+  /// Called once, when the user taps "Survived" at 0.
+  ///
+  /// The `op_id` is minted HERE, at the tap — not when the flush runs — so a
+  /// retried break replays under one id and AppAmbit counts it exactly once.
+  /// Enqueuing is what releases the roast locally: holding a 60 s timer can't be
+  /// faked, so the user is let out at once. Online, the flush lands the real row
+  /// (and `current_streak` with it); offline, the break stays queued and Home
+  /// shows it with a "waiting to sync" marker until the next flush.
   Future<void> registerBreak() async {
     final token = await ref.read(tokenStorageProvider).read();
     if (token == null) return;
-    try {
-      final stats = await ref.read(homeRepositoryProvider).registerBreak(token);
-      ref.read(homeViewModelProvider.notifier).applyStats(stats);
-    } on AuthException {
-      // Swallowed on purpose: see the doc comment above.
-    }
+    await ref
+        .read(outboxProvider.notifier)
+        .submit(
+          QueuedOp(
+            opId: newOpId(),
+            function: 'register_break',
+            body: const {},
+            userId: cacheUserIdFromToken(token),
+            createdAt: DateTime.now(),
+          ),
+        );
   }
 
   /// The user's `pain_zone`, or [generalZone] when it can't be read.
@@ -137,8 +147,9 @@ class BreakViewModel extends AsyncNotifier<BreakState> {
     try {
       final token = await ref.read(tokenStorageProvider).read();
       if (token != null) {
-        final zone =
-            (await ref.read(settingsRepositoryProvider).fetch(token)).painZone;
+        final zone = (await ref.read(settingsRepositoryProvider).fetch(token))
+            .value
+            .painZone;
         if (zone.isNotEmpty) return zone;
       }
     } on Exception {

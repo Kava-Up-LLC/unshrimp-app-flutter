@@ -39,7 +39,7 @@ class ReminderOpenedMarker {
       if (token == null) return;
 
       await _sync.sync();
-      final notifications = await _repository.fetch(token);
+      final notifications = (await _repository.fetch(token)).value;
 
       // A daily reminder has one row per day: the tap is on the latest one.
       final now = _now();

@@ -6,10 +6,15 @@ class BreaksTodayCard extends StatelessWidget {
     super.key,
     required this.breaksToday,
     required this.dailyGoal,
+    this.waitingToSync = false,
   });
 
   final int breaksToday;
   final int dailyGoal;
+
+  /// A completed break is counted here but still queued offline: the count is
+  /// shown, with this marker, until the flush confirms it with AppAmbit.
+  final bool waitingToSync;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +55,30 @@ class BreaksTodayCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (waitingToSync) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          size: 16,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Waiting to sync',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

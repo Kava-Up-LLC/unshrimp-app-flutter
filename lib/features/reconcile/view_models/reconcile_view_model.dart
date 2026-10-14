@@ -1,5 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cache_user_id.dart';
+import '../../../core/cache/cached_read.dart';
+import '../../../core/outbox/op_id.dart';
+import '../../../core/outbox/outbox.dart';
+import '../../../core/outbox/queued_op.dart';
+import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
 import '../../home/view_models/home_view_model.dart';
 import '../../settings/repositories/settings_repository.dart';
@@ -46,14 +52,17 @@ class ReconcileViewModel {
     final token = await ref.read(tokenStorageProvider).read();
     if (token == null) return const ReconcileOutcome.nothingPending();
 
-    final pending = await ref.read(reconcileRepositoryProvider).fetchPending(token);
+    final pending = await ref
+        .read(reconcileRepositoryProvider)
+        .fetchPending(token);
     if (pending.isEmpty) return const ReconcileOutcome.nothingPending();
 
     final List<PendingReminder> expired;
     if (forceAll) {
       expired = pending;
     } else {
-      final settings = await ref.read(settingsRepositoryProvider).fetch(token);
+      final settings =
+          (await ref.read(settingsRepositoryProvider).fetch(token)).value;
       final now = DateTime.now();
       expired = pending
           .where(
@@ -69,28 +78,56 @@ class ReconcileViewModel {
     }
     if (expired.isEmpty) return const ReconcileOutcome.nothingPending();
 
+    // One op for this reconcile run. The id is minted HERE, at the moment we
+    // decide these reminders expired — not at flush time — so a retry (or the
+    // outbox draining it later) replays under one id and the server counts it
+    // once.
+    final op = QueuedOp(
+      opId: newOpId(),
+      function: 'reconcile_ignored',
+      body: {
+        'ids': expired.map((r) => r.id).toList(),
+        'tz_offset_min': DateTime.now().timeZoneOffset.inMinutes,
+      },
+      userId: cacheUserIdFromToken(token),
+      createdAt: DateTime.now(),
+    );
+
     // One atomic, idempotent Cloud Code call marks the rows and counts them in
     // a single transaction; it re-checks the window/paused state at call time.
     // (Was two separate calls — register_ignore then mark_ignored — which could
-    // double-count if the app died between them.)
-    final result = await ref
-        .read(reconcileRepositoryProvider)
-        .reconcileIgnored(
-          token,
-          ids: expired.map((r) => r.id).toList(),
-          tzOffsetMin: DateTime.now().timeZoneOffset.inMinutes,
-        );
+    // double-count if the app died between them.) On a transport failure the op
+    // is queued and retried on the next flush instead of being lost.
+    try {
+      final result = await ref
+          .read(reconcileRepositoryProvider)
+          .reconcileIgnored(
+            token,
+            ids: (op.body['ids'] as List).cast<int>(),
+            tzOffsetMin: op.body['tz_offset_min'] as int,
+            opId: op.opId,
+          );
 
-    // Outside active hours or paused: the business rule is to count nothing.
-    if (result.ignored == 0) return const ReconcileOutcome.notCounted();
+      // Outside active hours or paused: the business rule is to count nothing.
+      if (result.ignored == 0) return const ReconcileOutcome.notCounted();
 
-    if (ref.exists(homeViewModelProvider)) {
-      ref.read(homeViewModelProvider.notifier).applyStats(result.stats);
+      if (ref.exists(homeViewModelProvider)) {
+        ref.read(homeViewModelProvider.notifier).applyStats(result.stats);
+      }
+      await ref.read(outboxProvider.notifier).recordApplied(op);
+      return ReconcileOutcome.counted(
+        ignored: result.ignored,
+        batteryPercent: result.stats.batteryPercent,
+      );
+    } on AuthException catch (e) {
+      // Transport failure → queue for the next flush. A rejected token
+      // (INVALID_TOKEN) never succeeds, so it is not queued — it rethrows and
+      // ends the session upstream.
+      if (isTransportError(e.code)) {
+        await ref.read(outboxProvider.notifier).enqueue(op);
+      }
+      rethrow;
     }
-    return ReconcileOutcome.counted(
-      ignored: result.ignored,
-      batteryPercent: result.stats.batteryPercent,
-    );
   }
 
   static int? _toMinutes(String hhmm) {

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/in_memory_prefs.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
 import 'package:move_well_app/features/home/repositories/home_repository.dart';
 import 'package:move_well_app/features/reconcile/models/pending_reminder.dart';
@@ -38,6 +40,8 @@ ProviderContainer _container(
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   group('isExpired (device-local)', () {
     const graceMin = 30;
     const start = '09:00';

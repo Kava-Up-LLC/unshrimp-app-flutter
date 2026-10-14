@@ -38,6 +38,38 @@ const readToken = (ctx, token) => {
 
 const invalidToken = { error: 'INVALID_TOKEN', message: 'Your session has expired. Please log in again.' };
 
+// ---- Shared idempotency helper -- INLINED from cloud_functions/_applied_ops.mjs.
+// Deploys are a single file with no imports, so this is copied, not imported.
+// Keep in sync with that canonical source. See it for the full contract and the
+// episode-6 grant_entitlement note.
+const applyOnce = async (ctx, { opId, userId, fn, statements }) => {
+  if (typeof opId !== 'string' || opId.length === 0) {
+    await ctx.appambit.batch(statements, true);
+    return { applied: true };
+  }
+  try {
+    await ctx.appambit.batch(
+      [
+        {
+          sql: `INSERT INTO applied_ops (op_id, user_id, function, applied_at)
+                 VALUES (?, ?, ?, datetime('now'))`,
+          params: [opId, userId, fn],
+        },
+        ...statements,
+      ],
+      true,
+    );
+    return { applied: true };
+  } catch (err) {
+    const seen = await ctx.appambit.db(
+      'SELECT 1 FROM applied_ops WHERE op_id = ?',
+      [opId],
+    );
+    if ((seen.results[0].rows ?? []).length === 0) throw err; // genuine failure
+    return { applied: false }; // replay: rolled back, nothing changed
+  }
+};
+
 /** Reads the user's stats row in the exact shape get_user_stats returns. */
 const loadStats = async (ctx, userId) => {
   const found = await ctx.appambit.db(
@@ -65,7 +97,7 @@ const loadStats = async (ctx, userId) => {
 };
 
 export const handler = async (ctx) => {
-  const { token } = readInput(ctx);
+  const { token, op_id: opId } = readInput(ctx);
   const payload = readToken(ctx, token);
   if (!payload) return invalidToken;
 
@@ -73,35 +105,40 @@ export const handler = async (ctx) => {
   // row, so a second call the same day sees last_break_date = today and does
   // NOT bump current_streak again (the double-call guard). "today" is the UTC
   // date — the streak boundary, unlike the reminder window, stays server-side.
-  await ctx.appambit.batch(
-    [
-      {
-        sql: `UPDATE user_stats
-                 SET ignored_count = 0,
-                     roast_level = MAX(0, roast_level - 1),
-                     breaks_today = CASE
-                       WHEN last_break_date IS NULL OR last_break_date < date('now')
-                         THEN 1
-                       ELSE breaks_today + 1
-                     END,
-                     current_streak = CASE
-                       WHEN (CASE
-                               WHEN last_break_date IS NULL OR last_break_date < date('now')
-                                 THEN 1
-                               ELSE breaks_today + 1
-                             END) >= (SELECT daily_goal FROM user_settings WHERE user_id = ?)
-                        AND (last_break_date IS NULL OR last_break_date <> date('now'))
-                         THEN current_streak + 1
-                       ELSE current_streak
-                     END,
-                     last_break_date = date('now'),
-                     roast_pending = 0
-               WHERE user_id = ?`,
-        params: [payload.sub, payload.sub],
-      },
-    ],
-    true,
-  );
+  // roast_pending is cleared in the SAME transaction that moves the counters.
+  const mutation = {
+    sql: `UPDATE user_stats
+             SET ignored_count = 0,
+                 roast_level = MAX(0, roast_level - 1),
+                 breaks_today = CASE
+                   WHEN last_break_date IS NULL OR last_break_date < date('now')
+                     THEN 1
+                   ELSE breaks_today + 1
+                 END,
+                 current_streak = CASE
+                   WHEN (CASE
+                           WHEN last_break_date IS NULL OR last_break_date < date('now')
+                             THEN 1
+                           ELSE breaks_today + 1
+                         END) >= (SELECT daily_goal FROM user_settings WHERE user_id = ?)
+                    AND (last_break_date IS NULL OR last_break_date <> date('now'))
+                     THEN current_streak + 1
+                   ELSE current_streak
+                 END,
+                 last_break_date = date('now'),
+                 roast_pending = 0
+           WHERE user_id = ?`,
+    params: [payload.sub, payload.sub],
+  };
+
+  // op_id makes a replayed flush harmless: the second apply rolls back and the
+  // row does not move. A legacy client without an op_id applies unguarded.
+  await applyOnce(ctx, {
+    opId,
+    userId: payload.sub,
+    fn: 'register_break',
+    statements: [mutation],
+  });
 
   const stats = await loadStats(ctx, payload.sub);
   return stats ?? invalidToken;

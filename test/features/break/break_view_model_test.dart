@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/in_memory_prefs.dart';
 import 'package:move_well_app/core/analytics/event_log.dart';
 import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/auth/repositories/token_storage.dart';
@@ -67,6 +69,8 @@ class _Setup {
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   const fromReminder = BreakArgs(source: BreakSource.reminder, zone: 'neck');
 
   test('opening tracks nothing and shows the zone stretch at 60', () async {

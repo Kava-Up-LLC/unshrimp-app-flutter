@@ -696,7 +696,7 @@ Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I rela
 ```
 ---
 
-# Day 5 (Episode 5) — Offline First, the Integration Pass and the Agent (MCP)
+# Day 5 (Episode 5) — Offline First: the app that does not need a signal
 
 > ⚠️ **Cloud Code lifecycle (same as episode 4 — applies to prompts 3 and 4 below).**
 > For EVERY new Cloud Code function: create → deploy → wait for build `ready` → activate →
@@ -708,9 +708,11 @@ Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I rela
 > "Something went wrong"; mismatched secret → every token is INVALID_TOKEN. `default_timeout_ms`
 > can only be set at create time or in the dashboard.
 
-> ⚠️ **This episode has no provoked crash.** Crash Reporting gets wired correctly and is
-> mentioned, but nothing is crashed on purpose. Do not add a "test crash" button and do not
-> suggest one.
+> ⚠️ **No staged failures, from this episode on.** Nothing is broken on purpose and no bug is
+> provoked to be fixed on camera. Crash Reporting gets wired correctly and is mentioned, but
+> nothing is crashed. Do not add a "test crash" button and do not suggest one, and do not propose
+> "let's show what happens when it fails" as a demo beat. The episode shows features working.
+> Hardening still happens in code; it just is not dramatized.
 
 > **State of the app (verified in code on `feature/ignored-reminders-roast-streak`).**
 > 15 Cloud Code functions are called today: auth_register, auth_login, auth_validate,
@@ -732,15 +734,25 @@ Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I rela
 > **Context that shapes the design:** the app is being prepared for Google Play, and episode 6
 > adds subscriptions (14-day Pro trial, then limited Free). Where a decision now would be
 > expensive to undo after purchases exist, prompts 1 and 2 say so explicitly. Run in order: #1 is
-> prep (before recording); #2 to #6 are the on-camera prompts the shooting script labels PROMPT 1
-> to PROMPT 5. Always say "episode", never "day", in anything that ends up on screen.
+> prep (before recording, 10 blocks); **#2 and #3 are the only two on-camera prompts**, which the
+> shooting script labels PROMPT 1 and PROMPT 2. Always say "episode", never "day", in anything
+> that ends up on screen.
 
 ---
 
 ## 1. Loose ends sweep  ·  PREP (run before recording)
 
-**Goal:** finish what is already half-built, before the episode adds anything new. Six
-independent blocks. Nothing here is a new feature.
+**Goal:** finish what is already half-built, before the episode adds anything new. Ten
+independent blocks. Blocks 1 to 6 finish existing work; blocks 7 to 10 close the holes that only
+matter now that the app is heading to Google Play (a loading state wherever something is awaited, a
+session that survives a bad signal, reminders that must not outlive the install, and a version
+gate). None of this is recorded: the episode only mentions what was adjusted.
+
+**The session secret.** Blocks 8 and 9 touch auth. `AUTH_TOKEN_SECRET` is **already configured** as a
+function secret on the auth functions; `auth_refresh` needs the **same value**. Set it from the
+AppAmbit **dashboard**, never from the chat and never in a file: it cannot be read back, so a wrong
+or whitespace paste fails silently as INVALID_TOKEN on every call. Tell me when to go set it and
+wait. Do not print it, log it, echo it or write it anywhere in the repo.
 
 Read CLAUDE.md and DESIGN.md first. Nothing is decided on the phone: any counting or state
 change goes through Cloud Code. Cloud Code has no npm packages, no cron and no outbound HTTP.
@@ -808,6 +820,93 @@ does: add it. `assets/images` ships 2.2 MB of which only `icon_round.png` is use
 Keep them in the repo, out of the bundle. Give the remaining runtime images a `cacheWidth`
 matching the size they are actually painted at.
 
+**Block 7 — A loading state everywhere something is awaited.**
+Every place that waits on a Cloud Code call or a database read must say so. Audit all 11 views and
+every view model mutation. Known gaps: `roast_view.dart` renders the roast line as `?? ''`, so the
+screen shows an empty headline while `roast_lines` resolves; `reminder_permission_view.dart` has no
+busy state at all while the OS permission request is in flight; `break_view.dart` has a single
+indicator and none for the exercise media; the Settings option sheets write through `_update` with an
+`isSaving` flag that the sheet itself does not surface. Rules for the pass: a button that triggers a
+call becomes disabled and shows progress in place, never a full-screen spinner over a screen that
+already has content; a screen with no content yet gets a skeleton or a centered indicator; a screen
+that already has content refreshes in place without blanking; nothing waits with a blank or a zero
+that looks like real data. Keep it to the shared widgets where you can, rather than one-off spinners
+per screen.
+
+**Block 8 — A session that lasts a week and survives being offline.**
+Today the token is an opaque string in secure storage with **no expiry stored anywhere**, and
+`session_gate_view_model.dart` sends the user to Log In whenever `auth_validate` throws, which
+includes "there is no network". So a user with a perfectly valid session is thrown out by a bad
+signal. Fix the whole lifecycle:
+
+- **The token already carries its own expiry.** It is an HS256 JWT and the Cloud Code functions read
+  `payload.exp` (unix seconds) to reject it. Make `auth_login` and `auth_register` also return
+  `expires_at` explicitly in their reply, so the client does not have to parse the JWT to know, and
+  set the lifetime to **7 days**.
+- Store `expires_at` next to the token in secure storage and keep them in sync: writing one writes
+  the other, deleting one deletes the other.
+- **Offline start:** on launch, if there is a token and `expires_at` is in the future, let the user
+  into the app without calling `auth_validate`. Revalidate in the background when there is network.
+  If `expires_at` has passed, go to Log In and clear the token.
+- **Only a transport failure is forgiven.** `auth_validate` returning INVALID_TOKEN, or any
+  function-level INVALID_TOKEN, ends the session immediately and clears the token. A network error
+  does not. Right now both land in the same `catch`.
+- **Keep it fresh:** add a Cloud Code function `auth_refresh(token)` that takes a still-valid token
+  and issues a new one with a new 7-day window, returning the new token and `expires_at`. Call it on
+  app resume when the current token is more than a day old, so an active user never gets logged out,
+  and a user who disappears for a week does. Swap the stored pair atomically; if the refresh fails,
+  keep using the old token until it actually expires.
+- **Say this out loud in your plan so you do not get it wrong:** the device **cannot** verify the
+  token's signature, because the signing secret lives only in AppAmbit and must never reach the app.
+  The local `expires_at` check decides one thing only — whether to show the app or the Log In screen.
+  It is a convenience gate, not a security boundary. **Every data call is still authorized by Cloud
+  Code**, which checks the signature and the expiry itself. Do not move any authorization decision
+  onto the phone.
+
+**Block 9 — Reminders must not outlive the install.**
+Reported symptom: after uninstalling the app, reminders kept arriving. First **reproduce it and tell
+me which platform**, because the two behave differently: on iOS, deleting an app removes its pending
+notifications, and any notification already sitting in Notification Center stays there until the user
+clears it, which is OS behaviour and not a bug. On Android the likely cause is real and it is this:
+
+- **`android:allowBackup` is not declared in `AndroidManifest.xml`, so Android auto-backup is on by
+  default.** On reinstall, the Backup Service can restore the app's `shared_preferences`, which is
+  where `delivery_log.dart` keeps `notifications.schedule` and where `reminder_preferences.dart`
+  keeps its state. A fresh install can therefore inherit a schedule from the previous install and
+  start firing reminders again. Worse: `flutter_secure_storage` on Android is backed by
+  EncryptedSharedPreferences, so **the session token can survive an uninstall too** and the user
+  comes back already logged in. That is a privacy problem on its own and it has to be fixed before
+  the store release.
+- Fix it: set `android:allowBackup="false"` (and `android:dataExtractionRules` / `fullBackupContent`
+  as appropriate for the target SDK) so neither the schedule nor the token is ever backed up. Explain
+  in your plan what else that turns off, so I know what I am trading.
+- **First run must start clean:** on launch, if there is no token in secure storage, call
+  `cancelAll()` on the scheduler and wipe the scheduling preferences before doing anything else. A
+  fresh install with no session has no business holding a schedule.
+- **Log out must clean up too.** `logOut()` in both `home_view_model.dart` and
+  `settings_view_model.dart` cancels the reminders and deletes the token, but leaves the
+  `shared_preferences` behind: the delivery log, the reminder preferences and (once blocks 2 and 3 of
+  the episode land) the read cache and the outbox. Clear everything that belongs to that user, so the
+  next account on the device starts from nothing.
+- Add a test that a launch with no token results in zero pending notifications.
+
+**Block 10 — The kill switch: gate a shipped build with no release.**
+Once the app is on Google Play you cannot un-ship a build, and waiting for a store review to stop
+a broken release is not a plan. This is real code, it just is not worth a camera beat.
+
+- Read `min_supported_version` from AppAmbit Remote Config at start (the config fetch already
+  happens in `AppBootstrap` via `enableConfig()`).
+- Compare it against the running version. Use `package_info_plus`; it is the one new dependency
+  and it is the standard way. Say so in your plan.
+- When the running version is below the minimum, show a blocking update screen before anything
+  else, in the app's voice, with a button to the store listing. No way around it.
+- **Default to permissive:** if the key is missing, unreadable or the fetch failed, the app runs
+  normally. A failed config fetch must never lock a user out of their own app.
+- One screen and one comparison. Not a feature.
+
+Tests: below the minimum blocks; equal or above runs; missing or malformed key runs; a failed
+fetch runs.
+
 ---
 
 ## 2. Offline first, part one: the app remembers what it saw  ·  on-camera prompt 1
@@ -825,8 +924,10 @@ connectivity plugin).
   error like INVALID_TOKEN or NO_SETTINGS) return the stored payload and mark the app offline.
   A function-level error is a real answer from AppAmbit and must keep bubbling up as it does now.
 - Wrap these reads: `get_user_stats`, `get_settings`, `get_notifications`, the exercises, the
-  sarcasm pack and the roast lines. Leave `auth_validate` alone: a session check must not be
-  answered from a cache.
+  sarcasm pack and the roast lines. **Leave `auth_validate` out of this cache:** a session check must
+  never be answered from a stored "yes". Offline sessions are handled a different way, already built
+  in block 8 of the PREP — the token carries its own `expires_at` and the device reads that. Reading
+  the token's own expiry is not the same as caching an answer from AppAmbit; do not blur the two.
 - **Key every entry by user id**, not just by function name. A second account logging in on the
   same device must never see the previous user's stats or notifications. Clear that user's
   entries on log out. Namespace the keys with a schema version so a future shape change
@@ -853,11 +954,63 @@ changing anything, and wait for my OK.
 
 ---
 
-## 3. Offline first, part two: nothing the user earned gets lost  ·  on-camera prompt 2
+## 3. Offline first, part two: nothing the user earned gets lost, and the loop holds  ·  on-camera prompt 2
+
+> **Self-contained: paste this whole section, from "Read CLAUDE.md" down to "wait for my OK".**
+> Nothing above it is needed.
+
+Read CLAUDE.md and DESIGN.md first.
+
+**State of the code, so you build on it instead of rebuilding it**
+
+- A read cache already exists in `lib/core/cache/` and is wired into the Home, Notifications and
+  Settings repositories. It survives offline reads. Use it.
+- There is no write queue of any kind. That is what this task adds.
+- `reconcile_ignored` already exists and already replaced the old pair of calls
+  `register_ignore` + `mark_ignored`. It has a local source in `cloud_functions/`.
+- The session already survives being offline: the token carries `expires_at` and `auth_refresh`
+  renews it. Do not change any of that.
+- Do NOT add a version gate and do not touch `min_supported_version`. That is separate work.
+- The working tree has uncommitted work in it. Do not run any git command that discards or
+  stages: no reset, no checkout, no stash, no `git add -A`. If you think something needs
+  committing, tell me and stop.
+
+**Cloud Code lifecycle.** This task creates and modifies functions, so this applies to every
+function you create OR redeploy: create, deploy, wait for the build to be `ready`, activate, add
+the HTTP trigger (`set-cloud-function-trigger`, type `http`, slug = function name, enabled), then
+remind me to set `AUTH_TOKEN_SECRET` on the **active version** (same value as the auth functions;
+it cannot be read back, so a wrong or whitespace paste fails silently as INVALID_TOKEN), then
+verify with a real token via MCP: `auth_login`, then call the function, and it must NOT return
+INVALID_TOKEN. A missing trigger makes the app's `CloudCode.call` fail with "Something went
+wrong"; a mismatched secret makes every token INVALID_TOKEN. Note that `register_break` and
+`reconcile_ignored` already exist, and the secret is set **per version** and is **not inherited**
+when you activate a new version, so I will have to set it again after you redeploy them. Batch
+the pauses: tell me once which functions are waiting on me, not one stop per function.
+
+**No staged failures.** Nothing gets broken on purpose and no bug is provoked to be fixed on
+camera. Crash Reporting gets wired correctly, but nothing is crashed. Do not add a test-crash
+button, do not suggest one, and do not propose "let's show what happens when it fails" as a demo
+beat. Hardening happens in the code; it just is not dramatized.
+
+**Two things I want confirmed explicitly in your plan**
+
+1. Where you generate the `op_id`. It must be **when the user taps Survived**, not when the flush
+   runs. If each retry carries a new id, the deduplication is decoration and the break still
+   double-counts.
+2. The Posture Roast rule, said back in your own words. If your plan does not mention
+   `roast_pending`, you have missed the part that matters most.
 
 **Goal:** this is the one that matters. Today a completed 60-second break calls
 `register_break` and, with no network, throws: the user did the exercise, held the minute, and
-the streak never counts it. The same goes for a reconciliation that cannot reach AppAmbit.
+the streak never counts it. The same goes for a reconciliation that cannot reach AppAmbit. Build
+the write side of offline, then make sure the whole loop still holds with the cache and the queue
+underneath it.
+
+**Note on framing:** none of the hardening below gets dramatized on camera. Nothing is broken on
+purpose and no failure is staged. The episode shows the feature working; this prompt just makes
+sure it actually does.
+
+### The outbox
 
 Build an outbox in `lib/core/outbox/`, on `shared_preferences`.
 
@@ -881,100 +1034,67 @@ Build an outbox in `lib/core/outbox/`, on `shared_preferences`.
   "waiting to sync" marker on the affected Home card, and reconcile the display when the flush
   lands. Never show a streak increase the cloud has not confirmed: `current_streak` only changes
   on a real response.
+- **The Posture Roast must let go of a queued break, and this is not optional.** Right now, offline,
+  the roast is a dead end: the only way out is a completed break, the break needs
+  `register_break` to reach AppAmbit, and `break_view_model.dart` **swallows that failure on
+  purpose** ("Swallowed on purpose: see the doc comment above"), so the user who actually did the
+  exercise is silently sent straight back to the roast, forever. Replace that swallow with the
+  queue. The rule to apply, and say it back to me in your plan: **release what the user earned by
+  doing, hold back what the server computes.** Holding a 60 second timer cannot be faked, so a
+  queued completed break clears `roast_pending` locally and lets the user out; `current_streak`
+  is computed by Cloud Code against `daily_goal` and `last_break_date`, so it waits for the real
+  response. `roastGateProvider` is fed from the stats by `HomeViewModel`, so the locally released
+  state has to flow through there and survive a cold start while the op is still queued.
+- **A way to replay an applied operation, or the guarantee cannot be shown.** Once a flush
+  succeeds the queue is empty, so a second flush does nothing and proves nothing. Add a fourth
+  debug row in Settings, inside the existing `kDebugMode` block next to "Fire test reminder
+  (5 s)": label `Replay last op (debug)`, subtitle `Debug only. Re-queues the last applied
+  operation with its original op_id.` It re-enqueues the last applied operation **with the same
+  `op_id`**, so the next flush replays it and the stats row can be seen refusing to move. Keep it
+  behind `kDebugMode` like the other three, and make sure it is the real queue path, not a
+  shortcut that calls the function directly.
 - Update the local sources in `cloud_functions/` for every function you touch.
 
-Tests: a queued op survives a restart; a flush is ordered; a second flush of the same `op_id`
-leaves the stats row untouched; a function-level error drops the op; the streak never advances
-from a queued-only break.
+### Then make the loop hold
 
-Demo: airplane mode on. I open a break, tap Start, 3-2-1, hold the 60 seconds, tap Survived. The
-app says it counted and shows "waiting to sync"; the `user_stats` row in the dashboard does not
-move. I turn the network back on, the app flushes, and the row moves once: `breaks_today +1`,
-`ignored_count 0`, `roast_level` down a step. Then I force the same flush twice to prove the row
-does not move a second time. Tell me your plan before changing anything, and wait for my OK.
-
----
-
-## 4. The integration pass: the race, and nothing swallowed  ·  on-camera prompt 3
-
-**Goal:** harden what the week built, and make sure a real failure is visible instead of silent.
-No new features, no provoked crash.
+With the cache and the outbox in place, finish the hardening the week left open. Report what you
+changed, but do not treat any of it as a demo beat.
 
 - **The `roast_pending` race.** Review every path that reads `user_stats`, decides, and writes
-  back. `register_ignore` and `register_break` must set and clear `roast_pending` inside the same
-  transaction that moves the counters, never by a read-then-write from a second call. The roast
-  redirect in `app_router.dart` must read the stats the reconciliation just applied, not a stale
-  copy. Prove it with a test that interleaves a reconciliation and a completed break.
-- **Nothing routed nowhere.** `AppBootstrap.run()` installs no error handlers, so framework and
-  async errors go nowhere today. Install `FlutterError.onError` and
-  `PlatformDispatcher.instance.onError` and route them to AppAmbit Crash Reporting. Check
-  whether the SDK already installs its own handlers and do not double-report if it does: tell me
-  what you find before wiring anything.
+  back. `register_ignore`, `register_break` and `reconcile_ignored` must set and clear
+  `roast_pending` inside the same transaction that moves the counters, never by a read-then-write
+  from a second call. The roast redirect in `app_router.dart` must read the stats the
+  reconciliation just applied, not a stale copy. Prove it with a test that interleaves a
+  reconciliation and a completed break.
+- **Error handlers.** `AppBootstrap.run()` installs none, so framework and async errors go
+  nowhere today. Install `FlutterError.onError` and `PlatformDispatcher.instance.onError` and
+  route them to AppAmbit Crash Reporting. Check whether the SDK already installs its own and do
+  not double-report if it does: tell me what you find before wiring anything.
 - **The 17 `catch (_)` blocks.** Audit each one. A fallback that is the designed behaviour
-  (Remote Config missing, notifications unavailable) stays, but logs. Anything that is hiding a
-  real failure stops hiding it. List what you changed and why.
+  (Remote Config missing, notifications unavailable) stays, but logs. Anything hiding a real
+  failure stops hiding it. List what you changed and why.
 - **The copy contradiction.** Three user-facing strings say "server": "Couldn't reach the
   server…", "Unexpected response from the server.", "The server did not return a session token."
-  The whole pitch of this backend is that there is no server of your own. Rewrite them to say
-  the app could not reach AppAmbit, or simply talk about the connection.
+  The whole pitch of this backend is that there is no server of your own. Rewrite them to talk
+  about reaching AppAmbit, or simply about the connection.
 - **Walk the whole loop** with the outbox and the cache in place: sign up, onboarding, a
   reminder, a completed break, an ignored one, the reconciliation, the roast, the streak. Fix
-  what breaks. Report anything you had to change outside the files above.
+  what breaks and report anything you had to change outside the files above.
 - **Android reliability note, not a code change:** reminders use inexact alarms, so under Doze
   they can arrive late. Check whether `grace_window_min` handling tolerates a reminder arriving
   well after its slot, and tell me if it does not. Do not switch to exact alarms.
 
-Tests: the interleaving test above, plus coverage for whatever the audit changes. Run
-`flutter analyze` and `flutter test`.
+Tests: a queued op survives a restart; a flush is ordered; a replayed op with the same `op_id`
+leaves the stats row untouched and adds no second `applied_ops` row; a function-level error drops the op; the streak never advances
+from a queued-only break; the interleaving test above. Run `flutter analyze` and `flutter test`.
 
-Demo: Crash Reporting shows the release build reporting in with zero crashes, and I walk the
-loop end to end on a device while the dashboard follows along. Tell me your plan before changing
-anything, and wait for my OK.
-
----
-
-## 5. The kill switch: gate a shipped build with no release  ·  on-camera prompt 4
-
-**Goal:** once the app is on Google Play you cannot un-ship a build. A version gate driven from
-Remote Config means a broken release can be stopped without waiting for a review.
-
-- Read `min_supported_version` from AppAmbit Remote Config at start (the config fetch already
-  happens in `AppBootstrap` via `enableConfig()`).
-- Compare it against the running version. Use `package_info_plus` for that; it is the one new
-  dependency this episode adds and it is the standard way. Say so in your plan.
-- When the running version is below the minimum, show a blocking update screen before anything
-  else, in the app's voice, with a button to the store listing. No way around it.
-- Default to permissive: if the key is missing, unreadable or the fetch failed, the app runs
-  normally. A failed config fetch must never lock a user out of the app.
-- Keep it one screen and one comparison. This is a small beat, not a feature.
-
-Tests: below the minimum blocks; equal or above runs; missing or malformed key runs; a failed
-fetch runs.
-
-Demo: the app runs normally. I set `min_supported_version` in the dashboard above the installed
-version, cold start, and the update wall appears. I set it back and the app runs again. No
-rebuild, no release. Tell me your plan before changing anything, and wait for my OK.
-
----
-
-## 6. Talk to the backend: the AppAmbit MCP  ·  on-camera prompt 5
-
-**Goal:** the closing moment of the series. The backend is operated by natural language, and the
-effect lands on the phone.
-
-Using the `appambit` MCP tools against the "MoveWell App" application, and reporting each step
-as you go:
-
-- Read the current `sarcasm_pack` and `roast_lines` values from Remote Config and show them to
-  me.
-- Change the active `sarcasm_pack` to a different pack, and replace one line of `roast_lines`
-  with a new one you write in the app's voice (posture and laziness, absurd comparisons, never
-  body, weight or real health, no strong profanity).
-- Read back the `user_stats` row for my test user and tell me its current values in plain
-  language.
-- Do not touch anything else. No schema changes, no deletes, no edits to any other row, and
-  nothing involving secrets or keys.
-
-Demo: I ask for each change in plain language, you make it through the MCP, and the next
-reminder and the next roast come out with the new text on the phone with no rebuild and no
-release. Tell me what you are about to change before each step, and wait for my OK.
+Demo: airplane mode on. I open a break, tap Start, 3-2-1, hold the 60 seconds, tap Survived. The
+app says it counted and shows "waiting to sync"; the `user_stats` row in the dashboard does not
+move. I turn the network back on, the app flushes, and the row moves once: `breaks_today +1`,
+`ignored_count 0`, `roast_level` down a step, and `applied_ops` gets exactly one row. Then I tap
+"Replay last op (debug)" in Settings and flush again: `applied_ops` still has one row and the
+stats row does not move. Then airplane mode again, a completed break, I kill the app from the
+task switcher, reopen it still offline and the "waiting to sync" marker is still there. Finally I
+walk the loop end to end with the network on, and the dashboard follows along without a single
+surprise. Tell me your plan before changing anything,
+and wait for my OK.

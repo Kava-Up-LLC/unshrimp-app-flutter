@@ -34,8 +34,8 @@ class RoastView extends ConsumerWidget {
                 Center(
                   child: Image.asset(
                     'assets/images/shrimp_hurt.png',
-                    width: 180,
-                    height: 180,
+                    width: 260,
+                    height: 260,
                     // Decode near the painted size (180 logical px up to 3x).
                     cacheWidth: 540,
                     // The hurt-shrimp art is produced separately; until it

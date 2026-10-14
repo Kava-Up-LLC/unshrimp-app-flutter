@@ -18,6 +18,7 @@ class FakeReconcileRepository implements ReconcileRepository {
   int fetchCalls = 0;
   int reconcileCalls = 0;
   int? lastTzOffsetMin;
+  String? lastOpId;
 
   @override
   Future<List<PendingReminder>> fetchPending(String token) async {
@@ -30,9 +31,11 @@ class FakeReconcileRepository implements ReconcileRepository {
     String token, {
     required List<int> ids,
     required int tzOffsetMin,
+    required String opId,
   }) async {
     reconcileCalls++;
     lastTzOffsetMin = tzOffsetMin;
+    lastOpId = opId;
     final n = counted ?? ids.length;
     if (n > 0) {
       reconciledIds.add(ids);

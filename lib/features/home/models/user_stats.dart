@@ -16,7 +16,8 @@ class UserStats {
   static const maxRoastLevel = 5;
 
   /// Spine Battery charge as a percent: full at roast level 0, empty at 5.
-  int get batteryPercent => (maxRoastLevel - roastLevel.clamp(0, maxRoastLevel)) * 20;
+  int get batteryPercent =>
+      (maxRoastLevel - roastLevel.clamp(0, maxRoastLevel)) * 20;
 
   final int userId;
   final String name;
@@ -29,6 +30,18 @@ class UserStats {
 
   /// The user's daily break goal (from `user_settings`); 0 when unknown.
   final int dailyGoal;
+
+  UserStats copyWith({int? breaksToday, bool? roastPending}) => UserStats(
+    userId: userId,
+    name: name,
+    archetype: archetype,
+    currentStreak: currentStreak,
+    breaksToday: breaksToday ?? this.breaksToday,
+    ignoredCount: ignoredCount,
+    roastLevel: roastLevel,
+    roastPending: roastPending ?? this.roastPending,
+    dailyGoal: dailyGoal,
+  );
 
   factory UserStats.fromJson(Map<String, dynamic> json) {
     int asInt(Object? value) => (value as num?)?.toInt() ?? 0;

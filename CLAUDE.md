@@ -31,7 +31,7 @@ dart run flutter_launcher_icons                   # regenerate app icons (config
 
 ## Backend: AppAmbit
 
-The Flutter SDK connects to the AppAmbit app "MoveWell App" (key in `.env`).
+The Flutter SDK connects to the AppAmbit app "Unshrimp" (keys in `.env`).
 
 The `jwt_auth` test function lives in a separate AppAmbit app (key stored out of the repo, accessed via the `appambit` MCP tools). It provides a linked SQLite database and Cloud Code (Node.js) functions.
 
@@ -56,7 +56,6 @@ The `jwt_auth` test function lives in a separate AppAmbit app (key stored out of
 - **Widgets belong to the `widgets/` folder of their feature** (`lib/features/<feature_name>/widgets/`).
 - **Reused widgets move to `lib/features/shared/`.** When a widget starts being repeated across features, move it to `shared/` and generalize it (parameters instead of feature-specific assumptions) so it works for all callers.
 - **Navigation uses `go_router`** (`go_router: ^17.5.0` — 18.x requires Flutter 3.44+, and Flutter will not be upgraded) for all routes between views. No `Navigator.push` with manual routes.
-- For full project context, read `/Users/isaiasmc/workspace/workspace_kavaup/MARKETING/Ideas/PLAN.md` before starting work.
 
 ## Hot reload (from flutter/agent-plugins rules)
 

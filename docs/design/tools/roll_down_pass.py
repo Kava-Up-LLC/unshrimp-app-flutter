@@ -1,5 +1,9 @@
-import json, subprocess, pathlib
-style = json.loads(pathlib.Path('/private/tmp/claude-501/-Users-isaiasmc-workspace-workspace-kavaup-apps-cms-move-well-app/b4f3211b-0e42-4eb5-8f86-f74af28ddcf1/scratchpad/gen/prompts.json').read_text())['style']
+import json, os, subprocess, pathlib, sys
+# Style JSON path comes from argv[1] or $STYLE_JSON, defaulting to ./prompts.json.
+style_src = pathlib.Path(
+    sys.argv[1] if len(sys.argv) > 1 else os.environ.get('STYLE_JSON', 'prompts.json')
+)
+style = json.loads(style_src.read_text())['style']
 pose = ('a stocky man with a thick torso and sturdy legs bending over in a standing forward fold, seen from the side in a three-quarter view: both legs straight with the feet apart '
         'on the floor, the hips up, the torso folded forward and down with a rounded back, the head hanging down between the arms with a blank face, no eyes, '
         'both arms hanging straight down toward the floor with open hands, fingers pointing down, fingertips next to the white sneakers')

@@ -1,4 +1,21 @@
-# Day 1 — Account System with Cloud Code (Sign Up, Log In and Session)
+# The prompts behind Unshrimp
+
+The exact prompts used to build **Unshrimp** on video, in the order they were
+sent and grouped by episode. Each prompt is self-contained — it carries its own
+copy, values and acceptance checks — so you can read an episode top to bottom
+and see how every feature was asked for and built: the account system,
+onboarding and settings, local reminders with the 60-second break and the
+Notification Center, the Posture Roast with the streak and Spine Battery, and
+the offline-first layer.
+
+Prompts marked **PREP** were run off camera before recording; the rest are the
+on-camera prompts. For how the app is wired and how to stand up the backend, see
+the [README](README.md); for the project's coding rules, see
+[CLAUDE.md](CLAUDE.md).
+
+---
+
+# Episode 1 — Account System with Cloud Code (Sign Up, Log In and Session)
 
 ## 1. The authentication screens in Flutter
 
@@ -182,9 +199,9 @@ and flutter test.
 
 ---
 
-# Day 2 — Onboarding that Personalizes + Settings (CMS + per-user Database)
+# Episode 2 — Onboarding that Personalizes + Settings (CMS + per-user Database)
 
-> Home was already built on Day 1. Day 2 adds the Onboarding and Settings features and the
+> Home was already built on Episode 1. Episode 2 adds the Onboarding and Settings features and the
 > functions `save_onboarding`, `update_settings`, `auth_change_password`. Every prompt below
 > carries its own copy and values, so nothing depends on notes off screen. All app copy is
 > in English.
@@ -218,7 +235,7 @@ subtitle, a type and its options (the label the user sees + the value it stores)
    subtitle: "This sets the Camarometro's tone."
    options:  "Gentle — Cheers you on." (gentle) · "Direct — Reminds you, no fluff." (direct) · "No mercy — Roasts you when you slack." (no_mercy)
 
-Content type `exercises` — short break exercises keyed by pain zone (used later in Day 3),
+Content type `exercises` — short break exercises keyed by pain zone (used later in Episode 3),
 based on desk-stretch guidance from Mayo Clinic, Healthline (APTA / physical therapists) and
 Cleveland Clinic. Each has a zone, a title and one line of steps. Seed:
 - neck:       "Upper trapezius stretch" / "Gently pull your head toward one shoulder, hold 10 to 15 seconds each side." · "Neck rolls" / "Lean your head forward and slowly roll toward each side, hold 10 seconds, 3 times each way."
@@ -307,14 +324,14 @@ error (e.g. WRONG_PASSWORD). When done, run flutter analyze and flutter test.
 
 ---
 
-# Day 3 — Local Reminders + 60s Micro-Break + Notification Center
+# Episode 3 — Local Reminders + 60s Micro-Break + Notification Center
 
 > State of the app (verified in code): Cloud Code functions that already exist and are called with
 > `CloudCode.call('name', body: {...}).future`: auth_register, auth_login, auth_validate,
 > save_onboarding, get_settings, update_settings, auth_change_password, get_user_stats. CMS content
 > type `exercises` (fields zone, title, steps) is read with `AppAmbitCms.content('exercises')...getList()`.
 > The app does NOT yet use Remote Config, Analytics, flutter_local_notifications, or a `notifications`
-> table. All app copy is in English. Day 3 adds the local reminder engine, the 60s break, and the
+> table. All app copy is in English. Episode 3 adds the local reminder engine, the 60s break, and the
 > Notification Center. Run these in order: #1 is prep (done before recording); #2 to #4 are the on-camera prompts, which the shooting script / script_time.txt label PROMPT 1, 2 and 3.
 
 ## 1. Update the exercise data — media + office set  ·  PREP (run before recording)
@@ -423,7 +440,7 @@ First, using the appambit MCP, create a `notifications` table in the AppAmbit da
 exist yet): an id (whole number, auto-increment, primary key); a user_id (whole number) pointing to
 users.id; a title (text); a body (text); a pack (text, e.g. "default" or "halloween"); a sent_at
 timestamp that defaults to now; a read true/false that starts false; and a was_ignored true/false
-that is allowed to be empty (null for now, used in Day 4). List the table to confirm it exists.
+that is allowed to be empty (null for now, used in Episode 4). List the table to confirm it exists.
 
 Every time the app SHOWS a reminder, write one row into `notifications` (title, body, pack, sent_at).
 Reach the database only through AppAmbit Cloud Code (Node built-ins only; deploy -> wait for ready ->
@@ -443,7 +460,7 @@ analyze and flutter test.
 
 ---
 
-# Day 3 — Follow-up prompts (in the order they were sent)
+# Episode 3 — Follow-up prompts (in the order they were sent)
 
 ## 5. Confirming the reminder engine plan
 
@@ -469,7 +486,7 @@ Use the mobile MCP (mcp-mobile) to drive the running Simulator instead of AppleS
 Go ahead. Answers:
 (a) I'll grant macOS Accessibility so you can tap through and verify (I'll also film it myself).
 (b) Yes, I'll sign into the AppAmbit dashboard in Chrome so you can show break_completed in Analytics.
-Leaving register_break out is correct, that's Day 4. For Day 3 the proof is the break_completed event in Analytics. Proceed: flutter analyze + flutter test, wire the tap + the Home "Take a break now" button, and after I sign in, open Analytics (Events) to show break_started and break_completed.
+Leaving register_break out is correct, that's Episode 4. For Episode 3 the proof is the break_completed event in Analytics. Proceed: flutter analyze + flutter test, wire the tap + the Home "Take a break now" button, and after I sign in, open Analytics (Events) to show break_started and break_completed.
 ```
 
 ## 8. Bug: a scheduled reminder tap shows an error instead of the break
@@ -567,7 +584,7 @@ Then run flutter analyze and flutter test, and redo the warm-tap repro on the si
 ```
 
 
-# Day 4 (Episode 4) — Ignored Reminders + Posture Roast + Streak & Spine Battery
+# Episode 4 — Ignored Reminders + Posture Roast + Streak & Spine Battery
 
 > ⚠️ **Cloud Code lifecycle (learned the hard way — applies to prompts 3 and 4 below).**
 > For EVERY Cloud Code function created in this project the full lifecycle is:
@@ -696,7 +713,7 @@ Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I rela
 ```
 ---
 
-# Day 5 (Episode 5) — Offline First: the app that does not need a signal
+# Episode 5 — Offline First: the app that does not need a signal
 
 > ⚠️ **Cloud Code lifecycle (same as episode 4 — applies to prompts 3 and 4 below).**
 > For EVERY new Cloud Code function: create → deploy → wait for build `ready` → activate →

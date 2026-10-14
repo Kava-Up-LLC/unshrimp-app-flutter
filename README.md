@@ -22,6 +22,20 @@ Clone it, point it at **your** AppAmbit account, create the schema, deploy the C
 
 ---
 
+## Contents
+
+- [What this is](#what-this-is)
+- [Built prompt by prompt](#built-prompt-by-prompt)
+- [Quick start](#quick-start)
+- [Backend setup (AppAmbit)](#backend-setup-appambit)
+- [How the backend drives the app](#how-the-backend-drives-the-app)
+- [What's included](#whats-included)
+- [Make it yours](#make-it-yours)
+- [Project structure](#project-structure)
+- [Commands](#commands)
+- [Troubleshooting](#troubleshooting)
+- [Learn more](#learn-more)
+
 ## What this is
 
 **Unshrimp** nags you to take posture breaks before you "shrimp" over your desk.
@@ -53,6 +67,15 @@ it is your backend.
 
 > Real captures from the iOS simulator. More screens live in
 > [`docs/screenshots/`](docs/screenshots/).
+
+## Built prompt by prompt
+
+This starter was built on video, prompt by prompt. **Every prompt used in the
+series lives in [`prompts.md`](prompts.md)**, grouped by episode — the account
+system, onboarding + settings, local reminders + the 60s break + the
+Notification Center, the Posture Roast + streak, and offline-first. Open it to
+follow each episode and see exactly how every feature was asked for and built,
+step by step.
 
 ## Quick start
 
@@ -286,6 +309,7 @@ business logic. State is Riverpod-only (**no `setState`**). Navigation is
 
 ## Learn more
 
+- [prompts.md](prompts.md) — every prompt used in the video series, by episode
 - [cloud_functions/README.md](cloud_functions/README.md) — every function's contract
 - [docs/backend/schema.sql](docs/backend/schema.sql) — the database schema
 - [AppAmbit docs](https://appambit.com) · [Flutter docs](https://docs.flutter.dev)

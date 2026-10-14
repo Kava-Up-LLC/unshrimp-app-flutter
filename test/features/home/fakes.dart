@@ -1,3 +1,4 @@
+import 'package:move_well_app/core/cache/cached_read.dart';
 import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/home/models/ignore_result.dart';
 import 'package:move_well_app/features/home/models/user_stats.dart';
@@ -21,11 +22,21 @@ class FakeHomeRepository implements HomeRepository {
     UserStats? afterBreak,
     UserStats? afterIgnore,
     this.ignoredResult,
+    this.cached,
+    this.offline = false,
+    this.asOf,
   }) : afterBreak = afterBreak ?? stats,
        afterIgnore = afterIgnore ?? stats;
 
   final UserStats stats;
   final AuthException? error;
+
+  /// The row [cachedStats] returns (null = nothing cached, the usual case).
+  final UserStats? cached;
+
+  /// What [fetchStats] reports as the cache outcome.
+  final bool offline;
+  final DateTime? asOf;
 
   /// The row the mutations return (defaults to [stats]).
   final UserStats afterBreak;
@@ -42,14 +53,17 @@ class FakeHomeRepository implements HomeRepository {
   int? lastTzOffsetMin;
 
   @override
-  Future<UserStats> fetchStats(String token) async {
+  Future<CacheResult<UserStats>> fetchStats(String token) async {
     calls++;
     if (error != null) throw error!;
-    return stats;
+    return CacheResult(value: stats, offline: offline, asOf: asOf);
   }
 
   @override
-  Future<UserStats> registerBreak(String token) async {
+  Future<UserStats?> cachedStats(String token) async => cached;
+
+  @override
+  Future<UserStats> registerBreak(String token, {required String opId}) async {
     breakCalls++;
     if (error != null) throw error!;
     return afterBreak;

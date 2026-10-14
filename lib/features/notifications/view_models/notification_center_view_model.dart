@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cache_status.dart';
+import '../../../core/cache/cached_read.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
 import '../models/app_notification.dart';
@@ -20,13 +24,49 @@ class NotificationCenterViewModel extends AsyncNotifier<List<AppNotification>> {
   @override
   Future<List<AppNotification>> build() async {
     final token = await _token();
-    await ref.read(notificationSyncProvider).sync();
-    final notifications = await ref
+
+    // Paint the cached history instantly, then sync + revalidate in the
+    // background so the list is there at once and corrects itself a moment
+    // later.
+    final cached = await ref
         .read(notificationsRepositoryProvider)
-        .fetch(token);
-    _shareUnread(notifications);
-    return notifications;
+        .cachedNotifications(token);
+    if (cached != null) {
+      _shareUnread(cached);
+      unawaited(_revalidate(token));
+      return cached;
+    }
+
+    // Cold start with nothing cached: log the delivered reminders, then read
+    // (the cache-backed read serves the stored list offline).
+    await ref.read(notificationSyncProvider).sync();
+    final result = await ref.read(notificationsRepositoryProvider).fetch(token);
+    _shareUnread(result.value);
+    _reportStatus(result);
+    return result.value;
   }
+
+  /// Syncs the delivered reminders and re-reads the history after an instant
+  /// cache paint. A transport failure keeps the painted list and flags the app
+  /// offline; a rejected token surfaces so the session can end.
+  Future<void> _revalidate(String token) async {
+    await ref.read(notificationSyncProvider).sync();
+    try {
+      final result = await ref.read(notificationsRepositoryProvider).fetch(token);
+      if (!ref.mounted) return;
+      state = AsyncData(result.value);
+      _shareUnread(result.value);
+      _reportStatus(result);
+    } on AuthException catch (e, st) {
+      if (ref.mounted) state = AsyncError(e, st);
+    }
+  }
+
+  // Deferred to a microtask so it never mutates a provider during a build.
+  void _reportStatus(CacheResult<List<AppNotification>> result) =>
+      Future.microtask(() {
+        if (ref.mounted) ref.read(cacheStatusProvider.notifier).apply(result);
+      });
 
   /// Pull to refresh: keeps the list on screen while it reloads.
   Future<void> refresh() async {

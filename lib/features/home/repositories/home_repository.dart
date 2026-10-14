@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cache_store.dart';
+import '../../../core/cache/cache_user_id.dart';
+import '../../../core/cache/cached_read.dart';
 import '../../../core/cloud/cloud_functions.dart';
 import '../models/ignore_result.dart';
 import '../models/user_stats.dart';
@@ -8,19 +11,49 @@ import '../models/user_stats.dart';
 /// database is never touched directly from the app, and the counting (breaks,
 /// ignores, streak) happens server-side — the app only reports what happened
 /// and shows the row the function returns.
+///
+/// The read ([fetchStats]) goes through a per-user cache, so it returns the
+/// last stored row offline instead of throwing; mutations are never cached.
 class HomeRepository {
-  const HomeRepository([this._cloud = const CloudFunctions()]);
+  const HomeRepository({
+    CloudFunctions cloud = const CloudFunctions(),
+    required CacheStore cache,
+  }) : _cloud = cloud,
+       _cache = cache;
+
+  static const _slot = 'user_stats';
 
   final CloudFunctions _cloud;
+  final CacheStore _cache;
 
-  /// `get_user_stats`: the current stats row. Idempotent read → may retry once.
-  Future<UserStats> fetchStats(String token) async => UserStats.fromJson(
-    await _cloud.call('get_user_stats', {'token': token}, retry: true),
-  );
+  /// `get_user_stats`: the current stats row, cached per user. Idempotent read
+  /// → may retry once. On a transport failure the stored row is returned with
+  /// [CacheResult.offline] set; a function-level error (INVALID_TOKEN, …) still
+  /// throws.
+  Future<CacheResult<UserStats>> fetchStats(String token) =>
+      CachedRead<UserStats>(store: _cache, decode: UserStats.fromJson).read(
+        userId: cacheUserIdFromToken(token),
+        slot: _slot,
+        fetch: () =>
+            _cloud.call('get_user_stats', {'token': token}, retry: true),
+      );
 
-  /// `register_break`: the user survived a 60 s break. Returns the updated row.
-  Future<UserStats> registerBreak(String token) async =>
-      UserStats.fromJson(await _cloud.call('register_break', {'token': token}));
+  /// The last cached stats row for this token's user, or null when none is
+  /// stored. Reads nothing over the network — used to paint Home instantly
+  /// before [fetchStats] revalidates.
+  Future<UserStats?> cachedStats(String token) async {
+    final entry = await _cache.read(cacheUserIdFromToken(token), _slot);
+    return entry == null ? null : UserStats.fromJson(entry.payload);
+  }
+
+  /// `register_break`: the user survived a 60 s break. [opId] is the client's
+  /// id for this break (minted when the user tapped "Survived"); the server
+  /// records it in `applied_ops` so a replayed flush does not double-count.
+  /// Returns the updated row.
+  Future<UserStats> registerBreak(String token, {required String opId}) async =>
+      UserStats.fromJson(
+        await _cloud.call('register_break', {'token': token, 'op_id': opId}),
+      );
 
   /// `register_ignore`: the user let [count] reminder(s) lapse. [tzOffsetMin]
   /// is the device's UTC offset in minutes so the server can test the active
@@ -44,5 +77,5 @@ class HomeRepository {
 }
 
 final homeRepositoryProvider = Provider<HomeRepository>(
-  (ref) => const HomeRepository(),
+  (ref) => HomeRepository(cache: ref.read(cacheStoreProvider)),
 );

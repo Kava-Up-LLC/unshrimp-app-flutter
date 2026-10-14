@@ -21,7 +21,7 @@ class HasUnreadNotificationsViewModel extends AsyncNotifier<bool> {
     if (token == null) return false;
     await ref.read(notificationSyncProvider).sync();
     return _anyUnread(
-      await ref.read(notificationsRepositoryProvider).fetch(token),
+      (await ref.read(notificationsRepositoryProvider).fetch(token)).value,
     );
   }
 

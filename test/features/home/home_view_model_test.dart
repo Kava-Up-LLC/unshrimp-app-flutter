@@ -8,6 +8,7 @@ import 'package:move_well_app/features/notifications/repositories/delivery_log.d
 import 'package:move_well_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:move_well_app/features/reminders/services/reminder_scheduler.dart';
 
+import '../../support/in_memory_prefs.dart';
 import '../auth/fakes.dart';
 import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
@@ -36,6 +37,8 @@ ProviderContainer _container(
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   test('loads the stats for the stored token', () async {
     final repo = FakeHomeRepository();
     final container = _container(repo, FakeTokenStorage('t'));

@@ -58,14 +58,14 @@ const fallbackExercises = [
     title: 'Standing Side Bend Flow',
     steps:
         'Stand with the feet hip-width apart and reach both arms overhead, then bend the trunk to one side, keeping both feet planted and the hips level.',
-    assetPath: 'assets/dataset/media/standing-side-bend-flow-start.webp',
+    assetPath: 'assets/dataset/media/standing-side-bend-main.webp',
   ),
   Exercise(
     zone: 'lower_back',
     title: 'Pilates Roll Down',
     steps:
         'Stand tall with the feet hip-width apart and the arms hanging at the sides, then drop the chin to the chest and start rolling down one vertebra at a time.',
-    assetPath: 'assets/dataset/media/pilates-roll-down-start.webp',
+    assetPath: 'assets/dataset/media/pilates-roll-down-peak.webp',
   ),
   Exercise(
     zone: 'none',

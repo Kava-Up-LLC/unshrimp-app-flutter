@@ -8,10 +8,12 @@ import '../../break/models/break_args.dart';
 import '../../break/models/break_source.dart';
 import '../../notifications/view_models/has_unread_notifications_view_model.dart';
 import '../../shared/widgets/log_out_dialog.dart';
-import '../models/user_stats.dart';
+import '../models/home_display.dart';
+import '../view_models/home_display_provider.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/breaks_today_card.dart';
 import '../widgets/notifications_bell.dart';
+import '../widgets/offline_indicator.dart';
 import '../widgets/spine_battery_card.dart';
 import '../widgets/spine_streak_card.dart';
 
@@ -21,7 +23,7 @@ class HomeView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(homeViewModelProvider);
+    final display = ref.watch(homeDisplayProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
     final hasUnread = ref.watch(hasUnreadNotificationsProvider).value ?? false;
 
@@ -37,6 +39,7 @@ class HomeView extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Unshrimp'),
         actions: [
+          const OfflineIndicator(),
           NotificationsBell(
             hasUnread: hasUnread,
             onPressed: () => context.push(AppRoutes.notifications),
@@ -58,10 +61,10 @@ class HomeView extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: switch (stats) {
+        child: switch (display) {
           AsyncData(:final value) => RefreshIndicator(
             onRefresh: viewModel.reload,
-            child: _HomeContent(stats: value),
+            child: _HomeContent(display: value),
           ),
           AsyncError(:final error) => _HomeError(
             message: error is AuthException
@@ -77,13 +80,14 @@ class HomeView extends ConsumerWidget {
 }
 
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.stats});
+  const _HomeContent({required this.display});
 
-  final UserStats stats;
+  final HomeDisplay display;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final stats = display.stats;
 
     return ListView(
       // Always scrollable so the pull-to-refresh works even when the cards fit.
@@ -106,6 +110,7 @@ class _HomeContent extends StatelessWidget {
         BreaksTodayCard(
           breaksToday: stats.breaksToday,
           dailyGoal: stats.dailyGoal,
+          waitingToSync: display.waitingToSync,
         ),
         const SizedBox(height: 32),
         FilledButton.icon(

@@ -170,9 +170,16 @@ class _SettingsContent extends StatelessWidget {
               ),
               SettingsRow(
                 label: 'Reconcile now (debug)',
-                subtitle: 'Debug only. Counts every pending reminder as expired.',
+                subtitle:
+                    'Debug only. Counts every pending reminder as expired.',
                 trailing: const Icon(Icons.rule_outlined),
                 onTap: () => _reconcileNowDebug(context),
+              ),
+              SettingsRow(
+                label: 'Replay last op (debug)',
+                subtitle: 'Debug only.',
+                trailing: const Icon(Icons.replay_outlined),
+                onTap: () => _replayLastOpDebug(context),
               ),
             ],
           ),
@@ -192,6 +199,15 @@ class _SettingsContent extends StatelessWidget {
 
   Future<void> _reconcileNowDebug(BuildContext context) =>
       _runDebug(context, viewModel.reconcileNowDebug);
+
+  Future<void> _replayLastOpDebug(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await viewModel.replayLastOp();
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Replayed last op — watch the stats row')),
+    );
+  }
 
   Future<void> _runDebug(
     BuildContext context,

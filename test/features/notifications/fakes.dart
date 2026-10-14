@@ -1,3 +1,4 @@
+import 'package:move_well_app/core/cache/cached_read.dart';
 import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/notifications/models/app_notification.dart';
 import 'package:move_well_app/features/notifications/models/delivered_reminder.dart';
@@ -34,10 +35,22 @@ class FakeDeliveryLog implements DeliveryLog {
 
 /// Stands in for the three Cloud Code functions over an in-memory table.
 class FakeNotificationsRepository implements NotificationsRepository {
-  FakeNotificationsRepository({List<AppNotification>? rows, this.error})
-    : rows = rows ?? [];
+  FakeNotificationsRepository({
+    List<AppNotification>? rows,
+    this.error,
+    this.cached,
+    this.offline = false,
+    this.asOf,
+  }) : rows = rows ?? [];
 
   final List<AppNotification> rows;
+
+  /// What [cachedNotifications] returns (null = nothing cached, the usual case).
+  final List<AppNotification>? cached;
+
+  /// What [fetch] reports as the cache outcome.
+  final bool offline;
+  final DateTime? asOf;
 
   /// Thrown by every call.
   AuthException? error;
@@ -66,10 +79,15 @@ class FakeNotificationsRepository implements NotificationsRepository {
   }
 
   @override
-  Future<List<AppNotification>> fetch(String token) async {
+  Future<CacheResult<List<AppNotification>>> fetch(String token) async {
     if (error != null) throw error!;
-    return [...rows]..sort((a, b) => b.sentAt.compareTo(a.sentAt));
+    final sorted = [...rows]..sort((a, b) => b.sentAt.compareTo(a.sentAt));
+    return CacheResult(value: sorted, offline: offline, asOf: asOf);
   }
+
+  @override
+  Future<List<AppNotification>?> cachedNotifications(String token) async =>
+      cached;
 
   @override
   Future<void> markRead(String token, int id) async {

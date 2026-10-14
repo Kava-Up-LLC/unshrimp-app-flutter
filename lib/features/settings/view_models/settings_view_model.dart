@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cache_status.dart';
+import '../../../core/cache/cached_read.dart';
+import '../../../core/outbox/outbox.dart';
 import '../../../core/session/reminder_data_cleanup.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../auth/repositories/token_storage.dart';
@@ -10,8 +13,10 @@ import '../../home/view_models/home_view_model.dart';
 import '../../reconcile/models/reconcile_outcome.dart';
 import '../../reconcile/view_models/reconcile_view_model.dart';
 import '../../reminders/services/reminder_scheduler.dart';
+import '../../roast/view_models/roast_gate_provider.dart';
 import '../models/pause_option.dart';
 import '../models/settings_state.dart';
+import '../models/user_settings.dart';
 import '../repositories/settings_repository.dart';
 
 final settingsViewModelProvider =
@@ -27,9 +32,18 @@ class SettingsViewModel extends AsyncNotifier<SettingsState> {
   @override
   Future<SettingsState> build() async {
     final token = await _token();
-    final settings = await ref.read(settingsRepositoryProvider).fetch(token);
-    return SettingsState(settings: settings);
+    // Single cache-backed read: offline it serves the stored row and flags the
+    // app offline. No background revalidate, so nothing overwrites an edit the
+    // user is making in the form.
+    final result = await ref.read(settingsRepositoryProvider).fetch(token);
+    _reportStatus(result);
+    return SettingsState(settings: result.value);
   }
+
+  // Deferred to a microtask so it never mutates a provider during a build.
+  void _reportStatus(CacheResult<UserSettings> result) => Future.microtask(() {
+    if (ref.mounted) ref.read(cacheStatusProvider.notifier).apply(result);
+  });
 
   /// Reloads the row, showing the spinner while the call is in flight.
   Future<void> refresh() async {
@@ -96,13 +110,21 @@ class SettingsViewModel extends AsyncNotifier<SettingsState> {
   Future<ReconcileOutcome> reconcileNowDebug() =>
       ref.read(reconcileViewModelProvider).run(forceAll: true);
 
+  /// Debug only: re-queue the last applied operation under its original id and
+  /// flush, so the server's `applied_ops` can be seen refusing to move the
+  /// stats row. Goes through the real queue, not a direct call.
+  Future<void> replayLastOp() => ref.read(outboxProvider.notifier).replayLast();
+
   /// Cancels the reminders and clears the stored session. The view navigates
   /// back to Log In.
   Future<void> logOut() async {
-    // Clear the schedule, delivery log and reminder preferences, not just the
-    // OS reminders, so the next account on the device starts from nothing.
+    ref.read(roastGateProvider.notifier).reset();
+    // Clear the schedule, delivery log, reminder preferences, cache and the
+    // write outbox, not just the OS reminders, so the next account on the
+    // device starts from nothing.
     await clearReminderData(ref);
     await ref.read(tokenStorageProvider).delete();
+    ref.invalidate(outboxProvider);
   }
 
   Future<void> _update(Map<String, Object?> changes) async {

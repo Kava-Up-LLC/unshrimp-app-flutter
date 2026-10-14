@@ -57,7 +57,7 @@ class ReminderScheduler {
     try {
       final token = await _tokens.read();
       if (token == null) return;
-      await _reschedule(await _settings.fetch(token));
+      await _reschedule((await _settings.fetch(token)).value);
     } catch (e) {
       _log.log('reminders_schedule_failed', {'error': e.toString()});
     }

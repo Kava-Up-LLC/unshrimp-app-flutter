@@ -18,7 +18,7 @@ typedef CloudErrorFrom = AuthException? Function(Map<String, dynamic> data);
 /// The single Cloud Code call path for every repository.
 ///
 /// Maps transport failures to [AuthException]. The server's functions can
-/// exceed their 10 s timeout on a cold start, so a call may **retry exactly
+/// exceed their ∏10 s timeout on a cold start, so a call may **retry exactly
 /// once after 1 s on a transient `http` / `timedOut` error** — but ONLY when
 /// the caller opts in with `retry: true`, which is reserved for **idempotent
 /// reads**. Mutations (register_ignore/register_break/mark_ignored/update_*/…)
@@ -36,7 +36,7 @@ class CloudFunctions {
   final CloudInvoke? _invoke;
   final Duration _retryDelay;
 
-  static const _timeout = Duration(seconds: 20);
+  static const _timeout = Duration(seconds: 60);
 
   /// [retry] opts into the single transient retry; pass it true ONLY for
   /// idempotent reads (get_user_stats, get_settings, get_pending_reminders,
@@ -85,7 +85,7 @@ class CloudFunctions {
     if (data is! Map<String, dynamic>) {
       throw const AuthException(
         code: 'UNEXPECTED_RESPONSE',
-        message: 'Unexpected response from the server.',
+        message: 'Unexpected response from the cloud.',
       );
     }
     final error = extract(data);
@@ -103,7 +103,7 @@ class CloudFunctions {
           code: e.code.name,
           message: e.code == CloudCodeErrorCode.http
               ? 'Something went wrong. Please try again.'
-              : "Couldn't reach the server. Check your connection and try again.",
+              : "Couldn't reach the cloud. Check your connection and try again.",
         );
   }
 

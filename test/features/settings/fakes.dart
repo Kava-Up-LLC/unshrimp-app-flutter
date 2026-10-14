@@ -1,3 +1,4 @@
+import 'package:move_well_app/core/cache/cached_read.dart';
 import 'package:move_well_app/features/auth/models/auth_exception.dart';
 import 'package:move_well_app/features/settings/models/user_settings.dart';
 import 'package:move_well_app/features/settings/repositories/settings_repository.dart';
@@ -15,7 +16,12 @@ const testSettings = UserSettings(
 );
 
 class FakeSettingsRepository implements SettingsRepository {
-  FakeSettingsRepository({this.error, this.fetchError});
+  FakeSettingsRepository({
+    this.error,
+    this.fetchError,
+    this.offline = false,
+    this.asOf,
+  });
 
   /// Thrown by [update] and [changePassword].
   AuthException? error;
@@ -23,13 +29,19 @@ class FakeSettingsRepository implements SettingsRepository {
   /// Thrown by [fetch].
   final AuthException? fetchError;
 
+  /// What [fetch] reports as the cache outcome.
+  final bool offline;
+  final DateTime? asOf;
+
   final updates = <Map<String, Object?>>[];
   final passwordChanges = <({String old, String next})>[];
+  int fetchCalls = 0;
 
   @override
-  Future<UserSettings> fetch(String token) async {
+  Future<CacheResult<UserSettings>> fetch(String token) async {
+    fetchCalls++;
     if (fetchError != null) throw fetchError!;
-    return testSettings;
+    return CacheResult(value: testSettings, offline: offline, asOf: asOf);
   }
 
   @override

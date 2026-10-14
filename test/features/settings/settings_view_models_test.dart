@@ -19,6 +19,7 @@ import '../auth/fakes.dart';
 import '../home/fakes.dart';
 import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
+import '../../support/in_memory_prefs.dart';
 import 'fakes.dart';
 
 ProviderContainer _container(
@@ -47,6 +48,8 @@ ProviderContainer _container(
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   group('SettingsViewModel', () {
     test('loads the user row', () async {
       final c = _container(FakeSettingsRepository());

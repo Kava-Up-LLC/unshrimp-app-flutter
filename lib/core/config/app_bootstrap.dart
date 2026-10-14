@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:appambit_sdk_flutter/appambit_sdk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,7 +23,13 @@ class AppBootstrap {
     // routing to Crash Reporting. We deliberately do NOT install our own — that
     // would double-report every framework/async error. Handled errors are sent
     // explicitly with AppAmbitSdk.logError where we catch them.
-    await AppAmbitSdk.start(appKey: dotenv.env['APPAMBIT_APP_KEY']!);
+    // One AppAmbit app per platform: pick the key for the OS we're running on.
+    // Falls back to the legacy single key so an older .env keeps working.
+    final appKey = (Platform.isAndroid
+            ? dotenv.env['APPAMBIT_APP_KEY_ANDROID']
+            : dotenv.env['APPAMBIT_APP_KEY_IOS']) ??
+        dotenv.env['APPAMBIT_APP_KEY'];
+    await AppAmbitSdk.start(appKey: appKey!);
 
     // Kill switch: gate a build below min_supported_version before anything
     // else. Permissive by design — any doubt lets the app run (see

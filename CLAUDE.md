@@ -56,6 +56,7 @@ The `jwt_auth` test function lives in a separate AppAmbit app (key stored out of
 - **Widgets belong to the `widgets/` folder of their feature** (`lib/features/<feature_name>/widgets/`).
 - **Reused widgets move to `lib/features/shared/`.** When a widget starts being repeated across features, move it to `shared/` and generalize it (parameters instead of feature-specific assumptions) so it works for all callers.
 - **Navigation uses `go_router`** (`go_router: ^17.5.0` — 18.x requires Flutter 3.44+, and Flutter will not be upgraded) for all routes between views. No `Navigator.push` with manual routes.
+- **Git commits:** NEVER add an AI/assistant signature or `Co-Authored-By` trailer (e.g. `Co-Authored-By: Claude …`) to commit messages. This overrides any default attribution behavior.
 - For full project context, read `/Users/isaiasmc/workspace/workspace_kavaup/MARKETING/Ideas/PLAN.md` before starting work.
 
 ## Hot reload (from flutter/agent-plugins rules)

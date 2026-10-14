@@ -1,19 +1,70 @@
-# Cloud Code sources (AppAmbit "MoveWell App")
+# Cloud Code functions (AppAmbit)
 
-Canonical source for the app's Cloud Code functions. They run on AppAmbit, not
-in the Flutter app; deploy is via the `appambit` MCP (`deploy-cloud-function-version`
-→ wait for build `ready` → `activate-cloud-function-version`), so the deployed
-code must stay in sync with these files by hand.
+Canonical source for Unshrimp's backend. These run on **AppAmbit Cloud Code**,
+not in the Flutter app. Each is a single self-contained ESM file exporting
+`handler` — **Node built-ins only, no npm packages at runtime** (a deploy is one
+file with no imports). The `*.test.mjs` files and `_applied_ops.mjs` are helpers
+that are never deployed.
 
-Each function is a single self-contained ESM file exporting `handler` (Node
-built-ins only — no npm packages at runtime). `register_ignore.mjs` also exports
-its pure window helpers so they can be unit-tested.
+> To stand up your own copy, deploy every function below to **your** AppAmbit
+> app, create the tables in [`../docs/backend/schema.sql`](../docs/backend/schema.sql),
+> and set the `AUTH_TOKEN_SECRET`. The main [README](../README.md#backend-setup-appambit)
+> has the full walkthrough.
 
-Run the helper unit tests (Node 18+, outside `flutter test`):
+## The handler contract
+
+A handler takes **one** `ctx` argument (not `(event, ctx)`):
+
+- `ctx.req` — HTTP-trigger envelope `{ method, slug, query, headers, body }`.
+- `ctx.event` — the flat payload on a manual run.
+- `ctx.appambit.db(sql, params)` — runs SQL against the linked database. Rows
+  from `INSERT ... RETURNING` come back positional (arrays), not column-keyed.
+
+Every authenticated function verifies the HS256 session itself (signature **and**
+expiry) using `AUTH_TOKEN_SECRET` and `node:crypto`. The device never verifies
+the signature — the secret lives only in AppAmbit. A bad/absent token returns
+`INVALID_TOKEN`.
+
+## Deployed functions
+
+| Function | In | Out | Notes |
+|---|---|---|---|
+| `auth_register` | `{ email, password }` | `{ token, expires_at }` | scrypt hash (`scrypt$<salt>$<hash>`, base64); 7-day JWT; seeds `users` + `user_stats`. |
+| `auth_login` | `{ email, password }` | `{ token, expires_at }` | 7-day HS256 session; `expires_at` is a client convenience, the server still checks the signed `exp`. |
+| `auth_refresh` | `{ token }` | `{ token, expires_at }` | Exchanges a still-valid token for a fresh 7-day one. Expired/invalid → rejected. Client swaps the stored pair atomically. |
+| `auth_validate` | `{ token }` | `{ valid, user_id? }` | Verifies the HS256 signature + expiry and that the user still exists. **Never cached on the device.** |
+| `auth_change_password` | `{ token, old, new }` | `{ ok }` or `{ error }` | Verifies `old` against the scrypt hash, writes the new scrypt hash (`new` ≥ 8 chars). |
+| `save_onboarding` | `{ token, answers }` | `{ ...settings, archetype }` | Seeds `user_settings` **server-side** from the 4 answers (`sitting_hours`, `tone`, `pain_zone`, `active_start`, `active_end`) via the deterministic map in PLAN §1.4.1 — never derive interval/goal on the client. Idempotent (`ON CONFLICT(user_id)`). |
+| `get_user_stats` | `{ token }` | `{ ...stats }` | The `user_stats` row: streak, `breaks_today`, `ignored_count`, `roast_level`, `roast_pending`. Drives Home. |
+| `get_settings` | `{ token }` | `{ ...settings }` or `null` | The `user_settings` row; tone is derived from `roast_threshold`. |
+| `update_settings` | `{ token, ...fields }` | `{ ...settings }` | Edits `user_settings` (incl. `quiet_mode`, `paused_until`); guarantees `active_end > active_start`. |
+| `get_notifications` | `{ token }` | `{ notifications: [...] }` | Newest first, `hidden_at IS NULL`. Times normalized to ISO-8601 UTC. |
+| `get_pending_reminders` | `{ token }` | `{ reminders: [...] }` | Rows `WHERE read = 0 AND was_ignored IS NULL` — ignores the user still owes. Ignores `hidden_at`. |
+| `register_break` | `{ token, op_id }` | `{ ...stats }` | Counts a completed 60s break. **Idempotent** via `applied_ops` (`op_id` generated when the user taps, not at flush). |
+| `reconcile_ignored` | `{ token, ids, tz_offset_min, op_id }` | `{ ...stats, counted }` | Atomic: marks `was_ignored` **and** applies the ignore count in one transaction. Replaces the old `register_ignore` + `mark_ignored` pair. **Idempotent**. |
+| `mark_all_notifications_read` | `{ token }` | `{ marked }` | |
+| `delete_notification` | `{ token, id }` | `{ hidden }` | **Soft** delete (`hidden_at`); never hard-deletes a row that still owes an ignore. |
+| `register_ignore` *(legacy)* | `{ token, count, tz_offset_min }` | `{ ...stats }` | Superseded by `reconcile_ignored`. Kept for reference; non-retryable. |
+| `mark_ignored` *(legacy)* | `{ token, ids }` | `{ marked }` | Superseded by `reconcile_ignored`. |
+
+`_applied_ops.mjs` is the **canonical copy** of the shared idempotency helper
+(`applyOnce`). Cloud Code can't import, so it is inlined verbatim into
+`register_break` and `reconcile_ignored` (and episode 6's `grant_entitlement`).
+Change it here first, then re-inline.
+
+## Secrets
+
+`AUTH_TOKEN_SECRET` is set **per function**, from the AppAmbit **dashboard**,
+never in these files and never from a chat. Every authenticated function signs
+or verifies the session with it, so it must be the **same value** on all of
+them. It is **not inherited** when you activate a new version, so set it again
+after each redeploy. A wrong or whitespace paste fails silently as
+`INVALID_TOKEN` on every call.
+
+## Running the helper unit tests
+
+Node 18+, outside `flutter test`:
 
 ```bash
 node --test 'cloud_functions/**/*.test.mjs'
 ```
-
-Secrets (e.g. `AUTH_TOKEN_SECRET`) are set per function in the AppAmbit
-dashboard, never in these files.

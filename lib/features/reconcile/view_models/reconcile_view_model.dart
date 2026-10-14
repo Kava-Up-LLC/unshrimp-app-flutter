@@ -95,9 +95,9 @@ class ReconcileViewModel {
 
     // One atomic, idempotent Cloud Code call marks the rows and counts them in
     // a single transaction; it re-checks the window/paused state at call time.
-    // (Was two separate calls — register_ignore then mark_ignored — which could
-    // double-count if the app died between them.) On a transport failure the op
-    // is queued and retried on the next flush instead of being lost.
+    // (An earlier version split this into two calls, which could double-count if
+    // the app died between them.) On a transport failure the op is queued and
+    // retried on the next flush instead of being lost.
     try {
       final result = await ref
           .read(reconcileRepositoryProvider)

@@ -163,12 +163,6 @@ class _SettingsContent extends StatelessWidget {
                 onTap: viewModel.fireTestReminder,
               ),
               SettingsRow(
-                label: 'Register ignore (debug)',
-                subtitle: 'Debug only. Reports one ignored reminder.',
-                trailing: const Icon(Icons.timer_off_outlined),
-                onTap: () => _registerIgnoreDebug(context),
-              ),
-              SettingsRow(
                 label: 'Reconcile now (debug)',
                 subtitle:
                     'Debug only. Counts every pending reminder as expired.',
@@ -193,9 +187,6 @@ class _SettingsContent extends StatelessWidget {
     await viewModel.logOut();
     if (context.mounted) context.go(AppRoutes.logIn);
   }
-
-  Future<void> _registerIgnoreDebug(BuildContext context) =>
-      _runDebug(context, viewModel.registerIgnoreDebug);
 
   Future<void> _reconcileNowDebug(BuildContext context) =>
       _runDebug(context, viewModel.reconcileNowDebug);

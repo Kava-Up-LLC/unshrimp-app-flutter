@@ -1,6 +1,5 @@
 import 'package:unshrimp_app/core/cache/cached_read.dart';
 import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
-import 'package:unshrimp_app/features/home/models/ignore_result.dart';
 import 'package:unshrimp_app/features/home/models/user_stats.dart';
 import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
 
@@ -20,13 +19,10 @@ class FakeHomeRepository implements HomeRepository {
     this.stats = testStats,
     this.error,
     UserStats? afterBreak,
-    UserStats? afterIgnore,
-    this.ignoredResult,
     this.cached,
     this.offline = false,
     this.asOf,
-  }) : afterBreak = afterBreak ?? stats,
-       afterIgnore = afterIgnore ?? stats;
+  }) : afterBreak = afterBreak ?? stats;
 
   final UserStats stats;
   final AuthException? error;
@@ -40,17 +36,9 @@ class FakeHomeRepository implements HomeRepository {
 
   /// The row the mutations return (defaults to [stats]).
   final UserStats afterBreak;
-  final UserStats afterIgnore;
-
-  /// What `register_ignore` reports as counted; defaults to the requested
-  /// count (everything counted). Set to 0 to simulate outside-window/paused.
-  final int? ignoredResult;
 
   int calls = 0;
   int breakCalls = 0;
-  int ignoreCalls = 0;
-  int? lastIgnoreCount;
-  int? lastTzOffsetMin;
 
   @override
   Future<CacheResult<UserStats>> fetchStats(String token) async {
@@ -67,18 +55,5 @@ class FakeHomeRepository implements HomeRepository {
     breakCalls++;
     if (error != null) throw error!;
     return afterBreak;
-  }
-
-  @override
-  Future<IgnoreResult> registerIgnore(
-    String token, {
-    required int count,
-    required int tzOffsetMin,
-  }) async {
-    ignoreCalls++;
-    lastIgnoreCount = count;
-    lastTzOffsetMin = tzOffsetMin;
-    if (error != null) throw error!;
-    return IgnoreResult(ignored: ignoredResult ?? count, stats: afterIgnore);
   }
 }

@@ -4,7 +4,6 @@ import '../../../core/cache/cache_store.dart';
 import '../../../core/cache/cache_user_id.dart';
 import '../../../core/cache/cached_read.dart';
 import '../../../core/cloud/cloud_functions.dart';
-import '../models/ignore_result.dart';
 import '../models/user_stats.dart';
 
 /// Reads and mutates the logged-in user's stats through Cloud Code. The
@@ -54,26 +53,6 @@ class HomeRepository {
       UserStats.fromJson(
         await _cloud.call('register_break', {'token': token, 'op_id': opId}),
       );
-
-  /// `register_ignore`: the user let [count] reminder(s) lapse. [tzOffsetMin]
-  /// is the device's UTC offset in minutes so the server can test the active
-  /// window against the user's wall clock. Returns the updated row plus how
-  /// many were actually counted (0 when outside the window or paused).
-  Future<IgnoreResult> registerIgnore(
-    String token, {
-    required int count,
-    required int tzOffsetMin,
-  }) async {
-    final data = await _cloud.call('register_ignore', {
-      'token': token,
-      'count': count,
-      'tz_offset_min': tzOffsetMin,
-    });
-    return IgnoreResult(
-      ignored: (data['ignored'] as num?)?.toInt() ?? 0,
-      stats: UserStats.fromJson(data),
-    );
-  }
 }
 
 final homeRepositoryProvider = Provider<HomeRepository>(

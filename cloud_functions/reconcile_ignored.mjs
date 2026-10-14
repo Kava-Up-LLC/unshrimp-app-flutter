@@ -159,8 +159,8 @@ export const handler = async (ctx) => {
     : [];
   if (clean.length === 0) return { ...stats, counted: 0, ignored: 0 };
 
-  // Same active-window / paused gate as register_ignore: outside the window or
-  // paused, an ignore is not counted and the rows are left pending.
+  // Active-window / paused gate: outside the window or paused, an ignore is
+  // not counted and the rows are left pending.
   const settings = await loadSettings(ctx, payload.sub);
   const offsetMin = Number.isFinite(tzOffsetMin) ? tzOffsetMin : 0;
   const paused =
@@ -175,10 +175,10 @@ export const handler = async (ctx) => {
   // The count of still-pending rows among the given ids. Evaluated inside the
   // same transaction, BEFORE the rows are marked, so the stat update and the
   // mark agree on the same N. A repeated call finds those rows already marked,
-  // so N is 0 and both statements are a no-op — the whole call is idempotent,
-  // which is what makes the old register_ignore/mark_ignored double-count
-  // (app dies, is backgrounded or loses the network between the two) impossible.
-  // roast_pending is set in the SAME transaction that moves the counters.
+  // so N is 0 and both statements are a no-op — the whole call is idempotent.
+  // Marking the rows and moving the counters in one transaction is what makes a
+  // double-count (app dies, is backgrounded or loses the network mid-way)
+  // impossible. roast_pending is set in the SAME transaction as the counters.
   const pendingCount = `(SELECT COUNT(*) FROM notifications
                            WHERE user_id = ? AND was_ignored IS NULL
                              AND id IN (${placeholders}))`;

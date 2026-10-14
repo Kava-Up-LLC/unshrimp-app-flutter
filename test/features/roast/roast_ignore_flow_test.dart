@@ -16,6 +16,7 @@ import 'package:unshrimp_app/features/home/models/ignore_result.dart';
 import 'package:unshrimp_app/features/home/models/user_stats.dart';
 import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
 import 'package:unshrimp_app/features/notifications/repositories/notifications_repository.dart';
+import 'package:unshrimp_app/features/reconcile/models/pending_reminder.dart';
 import 'package:unshrimp_app/features/reconcile/repositories/reconcile_repository.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
@@ -26,15 +27,14 @@ import 'package:unshrimp_app/features/settings/repositories/settings_repository.
 import '../auth/fakes.dart';
 import '../break/fakes.dart';
 import '../notifications/fakes.dart';
-import '../reconcile/fakes.dart';
 import '../reminders/fakes.dart';
 import '../settings/fakes.dart';
 
-/// Models the server for stats: register_ignore increments and latches
-/// roast_pending at the threshold; register_break clears it the way the real
-/// register_break function does.
-class ServerHomeRepository implements HomeRepository {
-  ServerHomeRepository({this.threshold = 3});
+/// In-memory stats machine shared by the home and reconcile repositories, so a
+/// reconcile that latches roast_pending and a break that clears it act on the
+/// same row — the way the real server does.
+class ServerStats {
+  ServerStats({this.threshold = 3});
 
   final int threshold;
   int ignoredCount = 0;
@@ -42,7 +42,7 @@ class ServerHomeRepository implements HomeRepository {
   int breaksToday = 0;
   bool roastPending = false;
 
-  UserStats get _stats => UserStats(
+  UserStats get stats => UserStats(
     userId: 7,
     name: 'Oliver H',
     archetype: null,
@@ -53,54 +53,91 @@ class ServerHomeRepository implements HomeRepository {
     roastPending: roastPending,
   );
 
+  IgnoreResult ignore(int count) {
+    ignoredCount += count;
+    roastLevel = (roastLevel + count).clamp(0, UserStats.maxRoastLevel);
+    if (ignoredCount >= threshold) roastPending = true;
+    return IgnoreResult(ignored: count, stats: stats);
+  }
+
+  UserStats registerBreak() {
+    ignoredCount = 0;
+    roastLevel = (roastLevel - 1).clamp(0, UserStats.maxRoastLevel);
+    breaksToday += 1;
+    roastPending = false;
+    return stats;
+  }
+}
+
+class ServerHomeRepository implements HomeRepository {
+  ServerHomeRepository(this.server);
+
+  final ServerStats server;
+
   @override
   Future<CacheResult<UserStats>> fetchStats(String token) async =>
-      CacheResult(value: _stats, offline: false);
+      CacheResult(value: server.stats, offline: false);
 
   @override
   Future<UserStats?> cachedStats(String token) async => null;
 
   @override
-  Future<IgnoreResult> registerIgnore(
-    String token, {
-    required int count,
-    required int tzOffsetMin,
-  }) async {
-    ignoredCount += count;
-    roastLevel = (roastLevel + count).clamp(0, UserStats.maxRoastLevel);
-    if (ignoredCount >= threshold) roastPending = true;
-    return IgnoreResult(ignored: count, stats: _stats);
-  }
+  Future<UserStats> registerBreak(String token, {required String opId}) async =>
+      server.registerBreak();
+}
+
+/// The reconcile server: counts the pending reminders it is handed in one
+/// atomic call and stops returning the ones it marked, like reconcile_ignored.
+class ServerReconcileRepository implements ReconcileRepository {
+  ServerReconcileRepository(
+    this.server, {
+    required List<PendingReminder> pending,
+  }) : _pending = List.of(pending);
+
+  final ServerStats server;
+  List<PendingReminder> _pending;
 
   @override
-  Future<UserStats> registerBreak(String token, {required String opId}) async {
-    ignoredCount = 0;
-    roastLevel = (roastLevel - 1).clamp(0, UserStats.maxRoastLevel);
-    breaksToday += 1;
-    roastPending = false;
-    return _stats;
+  Future<List<PendingReminder>> fetchPending(String token) async =>
+      List.of(_pending);
+
+  @override
+  Future<IgnoreResult> reconcileIgnored(
+    String token, {
+    required List<int> ids,
+    required int tzOffsetMin,
+    required String opId,
+  }) async {
+    _pending = _pending.where((r) => !ids.contains(r.id)).toList();
+    return server.ignore(ids.length);
   }
 }
 
 void main() {
   setUp(useInMemoryPrefs);
 
-  testWidgets('Register ignore x3 -> roast -> Fix my posture -> Survived -> '
+  testWidgets('Ignored reminders -> roast -> Fix my posture -> Survived -> '
       'Home cleared', (tester) async {
     tester.view.physicalSize = const Size(1290, 2796);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
-    final server = ServerHomeRepository();
+    final server = ServerStats();
+    final pending = [
+      for (var i = 1; i <= 3; i++)
+        PendingReminder(id: i, sentAtUtc: DateTime.now().toUtc()),
+    ];
     final ticks = StreamController<void>.broadcast();
     addTearDown(ticks.close);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
+          reconcileRepositoryProvider.overrideWithValue(
+            ServerReconcileRepository(server, pending: pending),
+          ),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
-          homeRepositoryProvider.overrideWithValue(server),
+          homeRepositoryProvider.overrideWithValue(ServerHomeRepository(server)),
           notificationsRepositoryProvider.overrideWithValue(
             FakeNotificationsRepository(),
           ),
@@ -134,14 +171,12 @@ void main() {
     expect(find.text('Hi Oliver H'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
 
-    // Open Settings, tap "Register ignore (debug)" three times.
+    // Open Settings, reconcile the three pending reminders as expired.
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    for (var i = 0; i < 3; i++) {
-      await tester.scrollUntilVisible(find.text('Register ignore (debug)'), 200);
-      await tester.tap(find.text('Register ignore (debug)'));
-      await tester.pumpAndSettle();
-    }
+    await tester.scrollUntilVisible(find.text('Reconcile now (debug)'), 200);
+    await tester.tap(find.text('Reconcile now (debug)'));
+    await tester.pumpAndSettle();
 
     // Threshold reached: the server latched roast_pending, and the live gate
     // routed to the roast (equivalent to the on-camera hot-restart).

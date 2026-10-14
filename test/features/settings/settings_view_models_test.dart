@@ -2,11 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
 import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
-import 'package:unshrimp_app/features/home/models/user_stats.dart';
 import 'package:unshrimp_app/features/home/repositories/home_repository.dart';
-import 'package:unshrimp_app/features/home/view_models/home_view_model.dart';
 import 'package:unshrimp_app/features/notifications/repositories/delivery_log.dart';
-import 'package:unshrimp_app/features/reconcile/models/reconcile_status.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:unshrimp_app/features/settings/models/pause_option.dart';
@@ -207,39 +204,6 @@ void main() {
       expect(scheduler.testCalls, 1);
       expect(scheduler.rescheduled, isEmpty);
       expect(scheduler.cancelCalls, 0);
-    });
-
-    test('registerIgnoreDebug reports one ignore with the tz offset '
-        'and pushes the row into Home', () async {
-      const afterIgnore = UserStats(
-        userId: 3,
-        name: 'Grace Hopper',
-        archetype: null,
-        currentStreak: 4,
-        breaksToday: 2,
-        ignoredCount: 1,
-        roastLevel: 1,
-        roastPending: false,
-      );
-      final home = FakeHomeRepository(afterIgnore: afterIgnore);
-      final c = _container(FakeSettingsRepository(), home: home);
-      await c.read(settingsViewModelProvider.future);
-      // Let Home settle before the ignore applies its row.
-      final homeSub = c.listen(homeViewModelProvider, (_, _) {});
-      await c.read(homeViewModelProvider.future);
-
-      final outcome = await c
-          .read(settingsViewModelProvider.notifier)
-          .registerIgnoreDebug();
-
-      expect(home.ignoreCalls, 1);
-      expect(home.lastIgnoreCount, 1);
-      expect(home.lastTzOffsetMin, DateTime.now().timeZoneOffset.inMinutes);
-      expect(outcome.status, ReconcileStatus.counted);
-      expect(outcome.ignored, 1);
-      expect(outcome.batteryPercent, 80); // roast 1 -> (5-1)*20
-      expect(c.read(homeViewModelProvider).value, same(afterIgnore));
-      homeSub.close();
     });
 
     test('tone row sends the tone and refreshes the shown settings', () async {

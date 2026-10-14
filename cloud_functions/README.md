@@ -41,11 +41,9 @@ the signature — the secret lives only in AppAmbit. A bad/absent token returns
 | `get_notifications` | `{ token }` | `{ notifications: [...] }` | Newest first, `hidden_at IS NULL`. Times normalized to ISO-8601 UTC. |
 | `get_pending_reminders` | `{ token }` | `{ reminders: [...] }` | Rows `WHERE read = 0 AND was_ignored IS NULL` — ignores the user still owes. Ignores `hidden_at`. |
 | `register_break` | `{ token, op_id }` | `{ ...stats }` | Counts a completed 60s break. **Idempotent** via `applied_ops` (`op_id` generated when the user taps, not at flush). |
-| `reconcile_ignored` | `{ token, ids, tz_offset_min, op_id }` | `{ ...stats, counted }` | Atomic: marks `was_ignored` **and** applies the ignore count in one transaction. Replaces the old `register_ignore` + `mark_ignored` pair. **Idempotent**. |
+| `reconcile_ignored` | `{ token, ids, tz_offset_min, op_id }` | `{ ...stats, counted }` | Atomic: marks `was_ignored` **and** applies the ignore count in one transaction. **Idempotent**. |
 | `mark_all_notifications_read` | `{ token }` | `{ marked }` | |
 | `delete_notification` | `{ token, id }` | `{ hidden }` | **Soft** delete (`hidden_at`); never hard-deletes a row that still owes an ignore. |
-| `register_ignore` *(legacy)* | `{ token, count, tz_offset_min }` | `{ ...stats }` | Superseded by `reconcile_ignored`. Kept for reference; non-retryable. |
-| `mark_ignored` *(legacy)* | `{ token, ids }` | `{ marked }` | Superseded by `reconcile_ignored`. |
 
 `_applied_ops.mjs` is the **canonical copy** of the shared idempotency helper
 (`applyOnce`). Cloud Code can't import, so it is inlined verbatim into

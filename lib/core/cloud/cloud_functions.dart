@@ -21,7 +21,7 @@ typedef CloudErrorFrom = AuthException? Function(Map<String, dynamic> data);
 /// exceed their ∏10 s timeout on a cold start, so a call may **retry exactly
 /// once after 1 s on a transient `http` / `timedOut` error** — but ONLY when
 /// the caller opts in with `retry: true`, which is reserved for **idempotent
-/// reads**. Mutations (register_ignore/register_break/mark_ignored/update_*/…)
+/// reads**. Mutations (register_break/reconcile_ignored/update_*/…)
 /// must never retry: a timed-out request may already have committed server
 /// side, so a retry would double-apply it. Function-level errors (INVALID_TOKEN,
 /// NO_SETTINGS, …) come back as a normal `{error}` reply and are never retried;

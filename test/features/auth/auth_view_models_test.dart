@@ -14,6 +14,7 @@ import 'package:move_well_app/features/reminders/services/reminder_scheduler.dar
 
 import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
+import '../../support/in_memory_prefs.dart';
 import 'fakes.dart';
 
 ProviderContainer _container(
@@ -41,6 +42,8 @@ ProviderContainer _container(
 }
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   group('SignUpViewModel', () {
     test('rejects bad format and mismatched passwords without calling '
         'the backend', () async {

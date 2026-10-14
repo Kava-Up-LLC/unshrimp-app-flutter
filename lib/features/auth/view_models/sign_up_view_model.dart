@@ -64,10 +64,10 @@ class SignUpViewModel extends Notifier<SignUpState> {
 
     state = state.copyWith(isLoading: true);
     try {
-      final token = await ref
+      final session = await ref
           .read(authRepositoryProvider)
           .register(name: name, email: email, password: state.password);
-      await ref.read(tokenStorageProvider).write(token);
+      await ref.read(tokenStorageProvider).writeSession(session);
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isAuthenticated: true);
     } on AuthException catch (e) {

@@ -34,10 +34,10 @@ class LogInViewModel extends Notifier<LogInState> {
 
     state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
-      final token = await ref
+      final session = await ref
           .read(authRepositoryProvider)
           .logIn(email: state.email.trim(), password: state.password);
-      await ref.read(tokenStorageProvider).write(token);
+      await ref.read(tokenStorageProvider).writeSession(session);
       unawaited(ref.read(reminderSchedulerProvider).rescheduleFromServer());
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isAuthenticated: true);

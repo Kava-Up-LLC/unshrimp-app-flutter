@@ -11,8 +11,11 @@ import 'package:move_well_app/features/reminders/services/reminder_scheduler.dar
 import 'fakes.dart';
 import '../notifications/fakes.dart';
 import '../reminders/fakes.dart';
+import '../../support/in_memory_prefs.dart';
 
 void main() {
+  setUp(useInMemoryPrefs);
+
   test(
     'a launch with no token cancels reminders and wipes the schedule (zero pending)',
     () async {

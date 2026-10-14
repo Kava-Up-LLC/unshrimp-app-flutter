@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:appambit_sdk_flutter/appambit_sdk_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cached_read.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/session/reminder_data_cleanup.dart';
 import '../../break/models/break_args.dart';
+import '../models/auth_exception.dart';
 import '../../reminders/repositories/reminder_notifications.dart';
 import '../../reminders/services/reminder_scheduler.dart';
 import '../models/session_start.dart';
@@ -33,21 +36,55 @@ class SessionGateViewModel extends AsyncNotifier<SessionStart> {
       return _loggedOut;
     }
 
-    try {
-      final valid = await ref.read(authRepositoryProvider).validate(token);
-      if (valid) {
-        // App start: reprogram reminders from the current settings.
-        unawaited(ref.read(reminderSchedulerProvider).rescheduleFromServer());
-        return SessionStart(
-          SessionStatus.authenticated,
-          location: await _launchLocation(),
-        );
-      }
+    final expiresAt = await storage.readExpiresAt();
+    final now = DateTime.now();
+
+    // Convenience gate (NOT a security check — the device cannot verify the
+    // signature; Cloud Code authorizes every data call): a stored expiry we know
+    // has passed means Log In. Clear the pair.
+    if (expiresAt != null && !expiresAt.isAfter(now)) {
       await storage.delete();
-    } on Exception {
-      // Network or backend failure: fall back to Log In, keep the token.
+      return _loggedOut;
     }
-    return _loggedOut;
+
+    // Offline-first. A token with a future local expiry opens the app straight
+    // away — no auth_validate on the critical path, so a cold or offline start
+    // still lands on Home. A legacy token with no stored expiry is confirmed
+    // online once, so a revoked old token still logs out; only INVALID_TOKEN
+    // ends the session, a transport failure is forgiven and the app opens.
+    if (expiresAt == null) {
+      try {
+        final valid = await ref.read(authRepositoryProvider).validate(token);
+        if (!valid) {
+          await storage.delete();
+          return _loggedOut;
+        }
+      } on AuthException catch (e, st) {
+        if (e.code == 'INVALID_TOKEN') {
+          await storage.delete();
+          return _loggedOut;
+        }
+        // Transport failure (offline) is forgiven silently — the app opens on
+        // the cached session. A non-transport failure here is genuinely
+        // unexpected, so record it (still opening the app) instead of hiding it.
+        if (!isTransportError(e.code)) {
+          unawaited(
+            AppAmbitSdk.logError(
+              message: 'session gate: unexpected validate failure (${e.code})',
+              exception: e,
+              stackTrace: st,
+            ),
+          );
+        }
+      }
+    }
+
+    // App start: reprogram reminders from the current settings.
+    unawaited(ref.read(reminderSchedulerProvider).rescheduleFromServer());
+    return SessionStart(
+      SessionStatus.authenticated,
+      location: await _launchLocation(),
+    );
   }
 
   /// The break when a tapped reminder launched the app (cold start), else

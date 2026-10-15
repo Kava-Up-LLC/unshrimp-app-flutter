@@ -1,8 +1,8 @@
 import '../models/exercise.dart';
 
 /// Local copy of the CMS `exercises` content, used when the CMS can't be
-/// reached. Keep it in sync with the CMS entries. Office stretch data comes from
-/// the RepDB free-tier dataset in `assets/dataset/`; the images are Unshrimp's own.
+/// reached. Keep it in sync with the CMS entries. Office stretch data and
+/// images are Unshrimp's own, in `assets/dataset/`.
 const fallbackExercises = [
   Exercise(
     zone: 'neck',

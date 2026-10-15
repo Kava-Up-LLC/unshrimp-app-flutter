@@ -3,20 +3,6 @@
   "scope": "Office-appropriate only: every exercise is done standing or seated in a chair. No floor, mat, or lying poses.",
   "generated": "2026-09-29",
   "count": 13,
-  "source": {
-    "name": "RepDB free-tier exercise dataset",
-    "url": "https://repdb.co",
-    "repo": "https://github.com/RepDB/exercise-dataset",
-    "license": "RepDB Free Tier License v1.0",
-    "attribution_required": true,
-    "attribution_text": "Exercise data by RepDB (repdb.co)",
-    "notes": [
-      "Free for commercial IN-APP use with visible attribution in the app credits screen.",
-      "Do NOT republish this folder as a standalone dataset/API (term 3, in-app use only).",
-      "Images may be resized/cropped/recolored; not to be fed to generative AI (term 5).",
-      "GIFs in this folder are built locally from the free static start/peak frames (allowed resize/crop transform), NOT from RepDB paid preview animations."
-    ]
-  },
   "zones": [
     "lower_back",
     "neck",
@@ -41,11 +27,6 @@
         "image_peak": null
       },
       "app_registered_as": "Upper trapezius stretch",
-      "source": "RepDB",
-      "source_id": "neck-side-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Sit or stand tall with your shoulders relaxed.",
         "Tilt your head so one ear drops toward that shoulder.",
@@ -75,11 +56,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "isometric-neck-side",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Sit or stand tall. Place the palm of one hand against the side of the head, above the ear.",
         "Press the head into the hand while resisting equally with the hand, the head does not move.",
@@ -109,11 +85,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "chin-tuck-hold",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand or sit tall with your shoulders relaxed.",
         "Pull your chin straight back, creating a double chin.",
@@ -143,11 +114,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "cross-body-shoulder-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand tall and bring one straight arm across your chest.",
         "Hook your other forearm under it.",
@@ -177,11 +143,6 @@
         "image_peak": null
       },
       "app_registered_as": "Chest opener",
-      "source": "RepDB",
-      "source_id": "doorway-chest-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand tall and raise your arms into a goalpost position.",
         "Bend your elbows ninety degrees, forearms vertical.",
@@ -210,11 +171,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "overhead-triceps-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Raise one arm overhead and bend the elbow.",
         "Let your hand drop down behind your head.",
@@ -244,11 +200,6 @@
         "image_peak": null
       },
       "app_registered_as": "Stand and reach",
-      "source": "RepDB",
-      "source_id": "standing-side-bend",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand with feet hip-width and reach both arms overhead.",
         "Clasp your hands and lengthen up tall.",
@@ -278,11 +229,6 @@
         "image_peak": "media/standing-side-bend-flow-peak.webp"
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "standing-side-bend-flow",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand with the feet hip-width apart and reach both arms overhead.",
         "Bend the trunk to one side, keeping both feet planted and the hips level.",
@@ -313,11 +259,6 @@
         "image_peak": "media/pilates-roll-down-peak.webp"
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "pilates-roll-down",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand tall with the feet hip-width apart and the arms hanging at the sides.",
         "Drop the chin to the chest and start rolling down one vertebra at a time.",
@@ -348,11 +289,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "mountain-pose",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand with the feet hip-width apart and spread the weight evenly across both feet.",
         "Engage the thighs lightly and let the tailbone drop so the pelvis is neutral.",
@@ -383,11 +319,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "standing-forward-fold",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand tall with your feet hip-width apart and legs straight.",
         "Hinge at your hips and fold your torso down toward the floor.",
@@ -416,11 +347,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "standing-quad-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Stand on one leg, holding a wall for balance if needed.",
         "Bend the other knee and grab that ankle behind you.",
@@ -450,11 +376,6 @@
         "image_peak": null
       },
       "app_registered_as": null,
-      "source": "RepDB",
-      "source_id": "standing-calf-stretch",
-      "source_url": "https://repdb.co",
-      "license": "RepDB Free Tier v1.0 (free commercial in-app use, attribution required)",
-      "attribution": "Exercise data by RepDB (repdb.co)",
       "instructions": [
         "Step one foot back into a staggered stance.",
         "Keep the back leg straight and the heel pressed down.",

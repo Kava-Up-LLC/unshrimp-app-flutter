@@ -9,6 +9,8 @@ class BreakState {
     required this.phase,
     required this.secondsLeft,
     required this.countInLeft,
+    this.isPro = false,
+    this.hasLockedPro = false,
   });
 
   static const totalSeconds = 60;
@@ -20,6 +22,14 @@ class BreakState {
 
   /// Pain zone the stretch was picked for.
   final String zone;
+
+  /// Whether the user is Pro. Free sees a "More exercises · Pro" lock under the
+  /// stretch; Pro does not.
+  final bool isPro;
+
+  /// Whether the zone has pro stretches this (Free) user can't see — the only
+  /// case the lock is shown. Always false for Pro, who can see them all.
+  final bool hasLockedPro;
 
   final BreakPhase phase;
   final int secondsLeft;
@@ -39,6 +49,8 @@ class BreakState {
   }) => BreakState(
     exercise: exercise,
     zone: zone,
+    isPro: isPro,
+    hasLockedPro: hasLockedPro,
     phase: phase ?? this.phase,
     secondsLeft: secondsLeft ?? this.secondsLeft,
     countInLeft: countInLeft ?? this.countInLeft,

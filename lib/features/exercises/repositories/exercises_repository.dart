@@ -40,6 +40,7 @@ class ExercisesRepository {
       zone: exercise.zone,
       title: exercise.title,
       steps: exercise.steps,
+      tier: exercise.tier,
       mediaUrl: exercise.mediaUrl,
       assetPath: bundled?.assetPath,
     );

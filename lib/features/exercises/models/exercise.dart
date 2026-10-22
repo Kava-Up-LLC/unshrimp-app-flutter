@@ -4,6 +4,7 @@ class Exercise {
     required this.zone,
     required this.title,
     required this.steps,
+    this.tier = 'pro',
     this.mediaUrl,
     this.assetPath,
   });
@@ -11,6 +12,11 @@ class Exercise {
   /// Pain zone it targets: the `pain_zone` onboarding answer (`neck`,
   /// `shoulders`, `lower_back`, `wrists` or `none`).
   final String zone;
+
+  /// Access tier: `free` or `pro`. Anything missing or unrecognized counts as
+  /// `pro`, so a new CMS entry never unlocks for Free by accident.
+  final String tier;
+
   final String title;
 
   /// One line of instructions.
@@ -33,6 +39,7 @@ class Exercise {
       zone: fields['zone']?.toString() ?? '',
       title: fields['title']?.toString() ?? '',
       steps: fields['steps']?.toString() ?? '',
+      tier: fields['tier']?.toString() == 'free' ? 'free' : 'pro',
       mediaUrl: fields['image_url']?.toString(),
     );
   }

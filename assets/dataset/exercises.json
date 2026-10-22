@@ -13,6 +13,7 @@
     {
       "id": "neck-side-stretch",
       "zone": "neck",
+      "tier": "free",
       "title": "Neck Side Stretch",
       "steps": "Sit or stand tall with your shoulders relaxed, then tilt your head so one ear drops toward that shoulder.",
       "description": "A gentle stretch that lengthens the upper trapezius and side of the neck by tilting the ear toward the shoulder.",
@@ -42,6 +43,7 @@
     {
       "id": "isometric-neck-side",
       "zone": "neck",
+      "tier": "pro",
       "title": "Isometric Neck Lateral Flexion",
       "steps": "Sit or stand tall. Place the palm of one hand against the side of the head, above the ear, then press the head into the hand while resisting equally with the hand, the head does not move.",
       "description": "A static side-neck drill using the hand as resistance against the head, training the sternocleidomastoid and scalene without hardware.",
@@ -71,6 +73,7 @@
     {
       "id": "chin-tuck-hold",
       "zone": "neck",
+      "tier": "pro",
       "title": "Chin Tuck Hold",
       "steps": "Stand or sit tall with your shoulders relaxed, then pull your chin straight back, creating a double chin.",
       "description": "A static neck drill that retracts the head straight back to strengthen the deep neck flexors and counter forward-head posture.",
@@ -100,6 +103,7 @@
     {
       "id": "cross-body-shoulder-stretch",
       "zone": "shoulders",
+      "tier": "free",
       "title": "Cross-Body Shoulder Stretch",
       "steps": "Stand tall and bring one straight arm across your chest, then hook your other forearm under it.",
       "description": "A standing stretch that targets the rear shoulder by drawing one arm horizontally across the chest.",
@@ -129,6 +133,7 @@
     {
       "id": "doorway-chest-stretch",
       "zone": "shoulders",
+      "tier": "pro",
       "title": "Doorway Chest Stretch",
       "steps": "Stand tall and raise your arms into a goalpost position, then bend your elbows ninety degrees, forearms vertical.",
       "description": "An open-arm stretch that lengthens the chest and front shoulders by drawing the arms back.",
@@ -157,6 +162,7 @@
     {
       "id": "overhead-triceps-stretch",
       "zone": "shoulders",
+      "tier": "pro",
       "title": "Overhead Triceps Stretch",
       "steps": "Raise one arm overhead and bend the elbow, then let your hand drop down behind your head.",
       "description": "A standing stretch that lengthens the triceps and lat by reaching the hand down the upper back.",
@@ -186,6 +192,7 @@
     {
       "id": "standing-side-bend",
       "zone": "lower_back",
+      "tier": "free",
       "title": "Standing Side Bend",
       "steps": "Stand with feet hip-width and reach both arms overhead, then clasp your hands and lengthen up tall.",
       "description": "A standing stretch that lengthens the obliques and lats by reaching overhead and bending to one side.",
@@ -215,6 +222,7 @@
     {
       "id": "standing-side-bend-flow",
       "zone": "lower_back",
+      "tier": "pro",
       "title": "Standing Side Bend Flow",
       "steps": "Stand with the feet hip-width apart and reach both arms overhead, then bend the trunk to one side, keeping both feet planted and the hips level.",
       "description": "A standing lateral flow: the arms reach overhead and the trunk bends from side to side in a controlled rhythm, lengthening the side body without holding either end position.",
@@ -245,6 +253,7 @@
     {
       "id": "pilates-roll-down",
       "zone": "lower_back",
+      "tier": "pro",
       "title": "Pilates Roll Down",
       "steps": "Stand tall with the feet hip-width apart and the arms hanging at the sides, then drop the chin to the chest and start rolling down one vertebra at a time.",
       "description": "A standing articulation of the spine: the head leads a vertebra-by-vertebra roll towards the floor and back up, mobilising the whole back while the legs stay steady.",
@@ -275,6 +284,7 @@
     {
       "id": "mountain-pose",
       "zone": "none",
+      "tier": "free",
       "title": "Mountain Pose",
       "steps": "Stand with the feet hip-width apart and spread the weight evenly across both feet, then engage the thighs lightly and let the tailbone drop so the pelvis is neutral.",
       "description": "The basic standing posture: feet grounded, legs active, spine tall and shoulders relaxed. It is the reference alignment every other standing pose is measured against.",
@@ -305,6 +315,7 @@
     {
       "id": "standing-forward-fold",
       "zone": "none",
+      "tier": "pro",
       "title": "Standing Forward Fold",
       "steps": "Stand tall with your feet hip-width apart and legs straight, then hinge at your hips and fold your torso down toward the floor.",
       "description": "A standing stretch that lengthens the hamstrings and lower back by folding the torso over straight legs.",
@@ -333,6 +344,7 @@
     {
       "id": "standing-quad-stretch",
       "zone": "none",
+      "tier": "pro",
       "title": "Standing Quad Stretch",
       "steps": "Stand on one leg, holding a wall for balance if needed, then bend the other knee and grab that ankle behind you.",
       "description": "A standing balance stretch that lengthens the quadriceps by pulling the heel toward the glute.",
@@ -362,6 +374,7 @@
     {
       "id": "standing-calf-stretch",
       "zone": "none",
+      "tier": "pro",
       "title": "Standing Calf Stretch",
       "steps": "Step one foot back into a staggered stance, then keep the back leg straight and the heel pressed down.",
       "description": "A staggered-stance stretch that lengthens the calf by pressing the rear heel down with the back leg straight.",

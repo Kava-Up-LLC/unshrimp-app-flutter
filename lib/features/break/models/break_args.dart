@@ -2,6 +2,13 @@ import '../../../core/router/app_routes.dart';
 import '../../reminders/models/reminder_payload.dart';
 import 'break_source.dart';
 
+/// The go_router location a tapped reminder opens: the route it names when it
+/// carries one (the weekly Spine Report → History), otherwise its break.
+String reminderTapLocation(String? payload) {
+  final route = ReminderPayload.decode(payload).route;
+  return route ?? BreakArgs.fromReminderPayload(payload).location;
+}
+
 /// Parameters of a break, carried in its route:
 /// `/break?source=reminder&zone=neck`.
 class BreakArgs {

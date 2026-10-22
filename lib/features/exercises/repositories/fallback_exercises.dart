@@ -7,6 +7,7 @@ const fallbackExercises = [
   Exercise(
     zone: 'neck',
     title: 'Neck Side Stretch',
+    tier: 'free',
     steps:
         'Sit or stand tall with your shoulders relaxed, then tilt your head so one ear drops toward that shoulder.',
     assetPath: 'assets/dataset/media/neck-side-stretch-main.webp',
@@ -28,6 +29,7 @@ const fallbackExercises = [
   Exercise(
     zone: 'shoulders',
     title: 'Cross-Body Shoulder Stretch',
+    tier: 'free',
     steps:
         'Stand tall and bring one straight arm across your chest, then hook your other forearm under it.',
     assetPath: 'assets/dataset/media/cross-body-shoulder-stretch-main.webp',
@@ -49,6 +51,7 @@ const fallbackExercises = [
   Exercise(
     zone: 'lower_back',
     title: 'Standing Side Bend',
+    tier: 'free',
     steps:
         'Stand with feet hip-width and reach both arms overhead, then clasp your hands and lengthen up tall.',
     assetPath: 'assets/dataset/media/standing-side-bend-main.webp',
@@ -70,6 +73,7 @@ const fallbackExercises = [
   Exercise(
     zone: 'none',
     title: 'Mountain Pose',
+    tier: 'free',
     steps:
         'Stand with the feet hip-width apart and spread the weight evenly across both feet, then engage the thighs lightly and let the tailbone drop so the pelvis is neutral.',
     assetPath: 'assets/dataset/media/mountain-pose-main.webp',

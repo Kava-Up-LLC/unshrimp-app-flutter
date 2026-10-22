@@ -12,6 +12,7 @@ import '../../auth/repositories/token_storage.dart';
 import '../../exercises/repositories/exercises_repository.dart';
 import '../../notifications/services/reminder_opened_marker.dart';
 import '../../settings/repositories/settings_repository.dart';
+import '../../subscriptions/repositories/entitlement_repository.dart';
 import '../models/break_args.dart';
 import '../models/break_phase.dart';
 import '../models/break_source.dart';
@@ -53,14 +54,19 @@ class BreakViewModel extends AsyncNotifier<BreakState> {
     }
 
     final zone = args.zone ?? await _zoneFromSettings();
+    final isPro = await _isPro();
     final exercises = await ref
         .read(exercisesRepositoryProvider)
         .fetchExercises();
-    final exercise = pickExercise(exercises, zone, Random());
+    final exercise = pickExercise(exercises, zone, isPro: isPro, random: Random());
+    final hasLockedPro =
+        !isPro && zoneCandidates(exercises, zone).any((e) => e.tier == 'pro');
 
     return BreakState(
       exercise: exercise,
       zone: zone,
+      isPro: isPro,
+      hasLockedPro: hasLockedPro,
       phase: BreakPhase.ready,
       secondsLeft: BreakState.totalSeconds,
       countInLeft: BreakState.countInSeconds,
@@ -140,6 +146,21 @@ class BreakViewModel extends AsyncNotifier<BreakState> {
             createdAt: DateTime.now(),
           ),
         );
+  }
+
+  /// Whether the user is Pro right now. Offline/no session falls back to Free,
+  /// which only means this one break gets the fixed free stretch, never a lie
+  /// about entitlement elsewhere.
+  Future<bool> _isPro() async {
+    try {
+      final token = await ref.read(tokenStorageProvider).read();
+      if (token != null) {
+        return (await ref.read(entitlementRepositoryProvider).fetch(token)).isPro;
+      }
+    } on Exception {
+      // Offline with nothing cached, or no session: treat as Free.
+    }
+    return false;
   }
 
   /// The user's `pain_zone`, or [generalZone] when it can't be read.

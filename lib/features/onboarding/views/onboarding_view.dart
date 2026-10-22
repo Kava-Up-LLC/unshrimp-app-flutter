@@ -26,7 +26,9 @@ class OnboardingView extends ConsumerWidget {
     ref.listen(onboardingViewModelProvider, (_, next) {
       final value = next.value;
       if (value == null) return;
-      if (value.isDone) context.go(AppRoutes.home);
+      // Straight to the one-time "trial started" screen; its route redirects
+      // to Home if it has already been shown.
+      if (value.isDone) context.go(AppRoutes.trialStarted);
       if (value.error?.code == 'INVALID_TOKEN') context.go(AppRoutes.logIn);
     });
 

@@ -8,6 +8,7 @@ import '../../features/reconcile/view_models/reconcile_runner_provider.dart';
 import '../../features/reminders/view_models/reminder_resume_provider.dart';
 import '../../features/reminders/view_models/reminder_taps_provider.dart';
 import '../../features/roast/view_models/roast_gate_provider.dart';
+import '../../features/subscriptions/view_models/launch_restore_provider.dart';
 import '../../features/update_gate/views/update_required_view.dart';
 import '../outbox/outbox.dart';
 import '../router/app_router.dart';
@@ -46,6 +47,10 @@ class UnshrimpApp extends ConsumerWidget {
     ref.watch(roastReleaseFeederProvider);
     // Re-read Home on resume so a reconnect clears the offline marker.
     ref.watch(homeResumeProvider);
+    // Report the store's active purchases once per launch so pro_until stays
+    // current (renewals/cancellations are invisible to the cloud). A no-op when
+    // signed out, purchases disabled, or the store is unavailable.
+    ref.watch(launchRestoreProvider);
 
     // A reminder tapped while the app runs opens its break (or the screen it
     // names, e.g. the Spine Report → History). Taps that launch the app are

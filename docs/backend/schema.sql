@@ -124,15 +124,26 @@ CREATE TABLE IF NOT EXISTS report_verdicts (
   text        TEXT NOT NULL
 );
 
--- -- Episode 6 (subscriptions) — not used yet, create it when you add purchases.
--- CREATE TABLE IF NOT EXISTS purchases (
---   id             INTEGER PRIMARY KEY AUTOINCREMENT,
---   user_id        INTEGER NOT NULL,
---   store          TEXT,            -- 'app_store' | 'play'
---   product_id     TEXT,
---   transaction_id TEXT NOT NULL,
---   raw_payload    TEXT,
---   status         TEXT,
---   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
--- );
--- CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_txn ON purchases (transaction_id);
+-- Episode 6 (subscriptions). One row per store transaction, written by
+-- grant_entitlement and restore_entitlement. transaction_id is UNIQUE (orderId
+-- when Play sends one, else the purchaseToken), so the same purchase inserts
+-- once however many times it is replayed. original_transaction_id is the Play
+-- purchaseToken — the stable subscription identity ownership is checked by, so
+-- a receipt already bound to another user_id is rejected on restore. The cloud
+-- never calls Play, so expires_at is a best-effort bound from the ORIGINAL
+-- purchaseTime; restore_entitlement re-extends pro_until on every launch.
+CREATE TABLE IF NOT EXISTS purchases (
+  id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id                 INTEGER NOT NULL,
+  store                   TEXT,            -- 'play' | 'app_store'
+  product_id              TEXT,
+  transaction_id          TEXT NOT NULL,   -- orderId ?? purchaseToken
+  original_transaction_id TEXT,            -- Play purchaseToken (ownership key)
+  environment             TEXT,            -- 'production' | 'sandbox'
+  purchased_at            TEXT,
+  expires_at              TEXT,
+  raw_payload             TEXT,            -- the signed original JSON
+  status                  TEXT,
+  created_at              TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_txn ON purchases (transaction_id);

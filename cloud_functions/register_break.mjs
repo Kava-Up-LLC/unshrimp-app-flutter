@@ -38,6 +38,14 @@ const readToken = (ctx, token) => {
 
 const invalidToken = { error: 'INVALID_TOKEN', message: 'Your session has expired. Please log in again.' };
 
+/** The user's local calendar day ("YYYY-MM-DD") for a UTC instant + offset.
+ *  user_daily_stats is keyed by the user's local day, the same one
+ *  get_stats_history reads, so Home and History agree on "today". */
+export const localDay = (nowMs, offsetMin) =>
+  new Date(nowMs + (Number.isFinite(offsetMin) ? offsetMin : 0) * 60000)
+    .toISOString()
+    .slice(0, 10);
+
 // ---- Shared idempotency helper -- INLINED from cloud_functions/_applied_ops.mjs.
 // Deploys are a single file with no imports, so this is copied, not imported.
 // Keep in sync with that canonical source. See it for the full contract and the
@@ -97,9 +105,27 @@ const loadStats = async (ctx, userId) => {
 };
 
 export const handler = async (ctx) => {
-  const { token, op_id: opId } = readInput(ctx);
+  const { token, op_id: opId, tz_offset_min: tzOffsetMin } = readInput(ctx);
   const payload = readToken(ctx, token);
   if (!payload) return invalidToken;
+
+  // The History screen reads per-day rows; a break adds one to today's row (the
+  // user's local day) and flips goal_met once the day's breaks reach the goal.
+  const today = localDay(Date.now(), tzOffsetMin);
+  const dailyStats = {
+    sql: `INSERT INTO user_daily_stats (user_id, day, breaks, ignored, goal_met)
+            VALUES (?, ?, 1, 0,
+              CASE WHEN 1 >= (SELECT daily_goal FROM user_settings WHERE user_id = ?)
+                THEN 1 ELSE 0 END)
+          ON CONFLICT(user_id, day) DO UPDATE SET
+            breaks = breaks + 1,
+            goal_met = CASE
+              WHEN breaks + 1 >= (SELECT daily_goal FROM user_settings WHERE user_id = ?)
+                THEN 1
+              ELSE goal_met
+            END`,
+    params: [payload.sub, today, payload.sub, payload.sub],
+  };
 
   // One atomic read-modify-write. Every right-hand reference reads the OLD
   // row, so a second call the same day sees last_break_date = today and does
@@ -137,7 +163,7 @@ export const handler = async (ctx) => {
     opId,
     userId: payload.sub,
     fn: 'register_break',
-    statements: [mutation],
+    statements: [mutation, dailyStats],
   });
 
   const stats = await loadStats(ctx, payload.sub);

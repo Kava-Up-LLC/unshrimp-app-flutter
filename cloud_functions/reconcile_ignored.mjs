@@ -102,10 +102,21 @@ export const isWithinWindow = (nowMs, offsetMin, start, end) => {
   return current >= startMin && current < endMin;
 };
 
+/** Mask index 0=Mon..6=Sun of the user's local day for a UTC instant + offset. */
+export const localWeekdayIndex = (nowMs, offsetMin) =>
+  (new Date(nowMs + (Number.isFinite(offsetMin) ? offsetMin : 0) * 60000).getUTCDay() + 6) % 7;
+
+/** True when the user's local day is a rest day for a "0/1" x7 Mon..Sun mask.
+ *  A malformed/empty mask means every day is active (false). */
+export const isRestToday = (nowMs, offsetMin, activeDays) => {
+  if (typeof activeDays !== 'string' || activeDays.length !== 7) return false;
+  return activeDays[localWeekdayIndex(nowMs, offsetMin)] === '0';
+};
+
 /** Reads the window/threshold fields needed to gate and apply an ignore. */
 const loadSettings = async (ctx, userId) => {
   const found = await ctx.appambit.db(
-    `SELECT active_start, active_end, roast_threshold, paused_until
+    `SELECT active_start, active_end, roast_threshold, paused_until, active_days
        FROM user_settings WHERE user_id = ?`,
     [userId],
   );
@@ -116,6 +127,7 @@ const loadSettings = async (ctx, userId) => {
     active_end: column(row, 1, 'active_end'),
     roast_threshold: Number(column(row, 2, 'roast_threshold')),
     paused_until: column(row, 3, 'paused_until') ?? null,
+    active_days: column(row, 4, 'active_days') ?? '1111111',
   };
 };
 
@@ -159,8 +171,9 @@ export const handler = async (ctx) => {
     : [];
   if (clean.length === 0) return { ...stats, counted: 0, ignored: 0 };
 
-  // Active-window / paused gate: outside the window or paused, an ignore is
-  // not counted and the rows are left pending.
+  // Active-window / paused / rest-day gate: outside the window, paused, or on a
+  // rest day, an ignore is not counted and the rows are left pending — the
+  // user is not punished for reminders on a day they do not work.
   const settings = await loadSettings(ctx, payload.sub);
   const offsetMin = Number.isFinite(tzOffsetMin) ? tzOffsetMin : 0;
   const paused =
@@ -169,7 +182,8 @@ export const handler = async (ctx) => {
   const inWindow =
     settings != null &&
     isWithinWindow(Date.now(), offsetMin, settings.active_start, settings.active_end);
-  if (!inWindow || paused) return { ...stats, counted: 0, ignored: 0 };
+  const restDay = isRestToday(Date.now(), offsetMin, settings?.active_days);
+  if (!inWindow || paused || restDay) return { ...stats, counted: 0, ignored: 0 };
 
   const placeholders = clean.map(() => '?').join(', ');
   // The count of still-pending rows among the given ids. Evaluated inside the

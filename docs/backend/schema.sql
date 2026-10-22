@@ -43,7 +43,14 @@ CREATE TABLE IF NOT EXISTS user_stats (
 -- / 1.4.1) and edited by update_settings. active_start/active_end are wall-clock
 -- "HH:mm" with no stored timezone; the app sends tz_offset_min on calls that
 -- need the user's local time. quiet_mode and paused_until are per-user.
--- trial_ends_at / entitlement / pro_until are reserved for episode 6 (unused).
+-- active_days is a 7-char "0/1" mask (Mon..Sun) of the days the user works:
+-- reminders fire and ignores count only on active days, and History shows rest
+-- days as "rest" without breaking the streak. Default "1111111" (every day).
+-- trial_ends_at / entitlement / pro_until drive the 14-day Pro trial and
+-- subscriptions (episode 6). auth_register seeds entitlement='pro_trial' and
+-- trial_ends_at=now+TRIAL_DAYS once, creating a partial row before onboarding
+-- fills the rest; get_entitlements computes is_pro from these timestamps
+-- against the cloud clock (the trial expires when read, there is no cron).
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id              INTEGER PRIMARY KEY,
   active_start         TEXT,      -- "HH:mm"
@@ -57,7 +64,20 @@ CREATE TABLE IF NOT EXISTS user_settings (
   paused_until         TEXT,
   trial_ends_at        TEXT,      -- episode 6, reserved
   entitlement          TEXT,      -- episode 6, reserved
-  pro_until            TEXT        -- episode 6, reserved
+  pro_until            TEXT,       -- episode 6, reserved
+  active_days          TEXT NOT NULL DEFAULT '1111111'  -- "0/1" x7, Mon..Sun
+);
+
+-- One row per user per local day, written by register_break / reconcile_ignored
+-- and read by get_stats_history and get_weekly_report. day is the user's local
+-- "YYYY-MM-DD"; goal_met is 0/1. Missing days are read as zero.
+CREATE TABLE IF NOT EXISTS user_daily_stats (
+  user_id  INTEGER NOT NULL,
+  day      TEXT NOT NULL,                -- user's local "YYYY-MM-DD"
+  breaks   INTEGER NOT NULL DEFAULT 0,
+  ignored  INTEGER NOT NULL DEFAULT 0,
+  goal_met INTEGER NOT NULL DEFAULT 0,   -- 0/1
+  PRIMARY KEY (user_id, day)
 );
 
 -- One row per reminder shown. was_ignored is written when a reminder expires
@@ -88,6 +108,20 @@ CREATE TABLE IF NOT EXISTS applied_ops (
   user_id    INTEGER,
   function   TEXT,
   applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- The weekly Spine Report verdicts (episode 6). get_weekly_report returns the
+-- text of the lowest-rank row whose conditions the week meets; a NULL condition
+-- always matches, so the no-condition row is the guaranteed fallback. {ignored}
+-- in the text is replaced with the week's ignored count. Editable from the
+-- dashboard — the function reads it live, so edits show on the next open with no
+-- release. Seed the rows via the MCP (see the episode 6 prompt).
+CREATE TABLE IF NOT EXISTS report_verdicts (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  rank        INTEGER NOT NULL,   -- lower wins; evaluated ascending
+  min_breaks  INTEGER,            -- NULL = no lower bound (always matches)
+  max_ignored INTEGER,            -- NULL = no upper bound (always matches)
+  text        TEXT NOT NULL
 );
 
 -- -- Episode 6 (subscriptions) — not used yet, create it when you add purchases.

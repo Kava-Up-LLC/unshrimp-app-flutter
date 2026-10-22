@@ -39,7 +39,7 @@ const readToken = (ctx, token) => {
 const invalidToken = { error: 'INVALID_TOKEN', message: 'Your session has expired. Please log in again.' };
 
 const SETTINGS_COLUMNS = `user_id, active_start, active_end, reminder_interval_min, grace_window_min,
-  daily_goal, roast_threshold, pain_zone, quiet_mode, paused_until`;
+  daily_goal, roast_threshold, pain_zone, quiet_mode, paused_until, active_days`;
 
 const noSettings = { error: 'NO_SETTINGS', message: 'Finish onboarding to set up your reminders.' };
 
@@ -54,6 +54,10 @@ const loadSettings = async (ctx, userId) => {
   );
   const row = (found.results[0].rows ?? [])[0];
   if (!row) return null;
+  // auth_register seeds a partial row (trial fields only) before onboarding.
+  // A row with no active_start has not been through onboarding, so it reads the
+  // same as no row at all: the app sends the user to onboarding, unchanged.
+  if ((column(row, 1, 'active_start') ?? null) === null) return null;
   const roastThreshold = Number(column(row, 6, 'roast_threshold'));
   return {
     user_id: Number(column(row, 0, 'user_id')),
@@ -67,6 +71,7 @@ const loadSettings = async (ctx, userId) => {
     pain_zone: column(row, 7, 'pain_zone'),
     quiet_mode: Boolean(Number(column(row, 8, 'quiet_mode'))),
     paused_until: column(row, 9, 'paused_until') ?? null,
+    active_days: column(row, 10, 'active_days') ?? '1111111',
   };
 };
 

@@ -39,7 +39,7 @@ const readToken = (ctx, token) => {
 const invalidToken = { error: 'INVALID_TOKEN', message: 'Your session has expired. Please log in again.' };
 
 const SETTINGS_COLUMNS = `user_id, active_start, active_end, reminder_interval_min, grace_window_min,
-  daily_goal, roast_threshold, pain_zone, quiet_mode, paused_until`;
+  daily_goal, roast_threshold, pain_zone, quiet_mode, paused_until, active_days`;
 
 const noSettings = { error: 'NO_SETTINGS', message: 'Finish onboarding to set up your reminders.' };
 
@@ -69,6 +69,7 @@ const loadSettings = async (ctx, userId) => {
     pain_zone: column(row, 7, 'pain_zone'),
     quiet_mode: Boolean(Number(column(row, 8, 'quiet_mode'))),
     paused_until: column(row, 9, 'paused_until') ?? null,
+    active_days: column(row, 10, 'active_days') ?? '1111111',
   };
 };
 
@@ -148,6 +149,15 @@ export const handler = async (ctx) => {
       if (date.getTime() <= Date.now()) return invalidSettings('Pick a pause that ends in the future.');
       changes.paused_until = date.toISOString();
     }
+  }
+
+  // Which weekdays the user works, "0/1" x7 (Mon..Sun). At least one work day.
+  if ('active_days' in input) {
+    const days = input.active_days;
+    if (typeof days !== 'string' || !/^[01]{7}$/.test(days) || !days.includes('1')) {
+      return invalidSettings('Pick at least one work day.');
+    }
+    changes.active_days = days;
   }
 
   const columns = Object.keys(changes);

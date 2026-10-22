@@ -5,6 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 import {
   handler,
+  isRestToday,
   isWithinWindow,
   localMinuteOfDay,
   toMinutes,
@@ -35,6 +36,16 @@ test('helpers behave', () => {
   assert.equal(localMinuteOfDay(atLocal(9, 1), OFFSET), 541);
 });
 
+test('isRestToday reads the local weekday against the mask (Mon..Sun)', () => {
+  const monday = Date.parse('2024-01-01T00:00:00Z'); // a Monday
+  const sunday = Date.parse('2024-01-07T00:00:00Z'); // a Sunday
+  assert.equal(isRestToday(monday, 0, '0111111'), true); // Mon off
+  assert.equal(isRestToday(monday, 0, '1111111'), false); // every day worked
+  assert.equal(isRestToday(monday, 0, '1111110'), false); // Sun off, today is Mon
+  assert.equal(isRestToday(sunday, 0, '1111110'), true); // Sun off, today is Sun
+  assert.equal(isRestToday(monday, 0, 'nope'), false); // malformed -> active
+});
+
 // ---- Handler against a real in-memory SQLite -------------------------------
 const SECRET = 'test-secret';
 
@@ -60,12 +71,12 @@ const seed = () => {
       ignored_count INTEGER, roast_level INTEGER, roast_pending INTEGER);
     CREATE TABLE user_settings (
       user_id INTEGER, active_start TEXT, active_end TEXT,
-      roast_threshold INTEGER, paused_until TEXT);
+      roast_threshold INTEGER, paused_until TEXT, active_days TEXT);
     CREATE TABLE notifications (
       id INTEGER PRIMARY KEY, user_id INTEGER, read INTEGER, was_ignored INTEGER);
     INSERT INTO users VALUES (1, 'Grace');
     INSERT INTO user_stats VALUES (1, NULL, 0, 0, 0, 0, 0);
-    INSERT INTO user_settings VALUES (1, '00:00', '23:59', 5, NULL);
+    INSERT INTO user_settings VALUES (1, '00:00', '23:59', 5, NULL, '1111111');
     INSERT INTO notifications VALUES (1, 1, 0, NULL), (2, 1, 0, NULL);
   `);
   return db;

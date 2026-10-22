@@ -6,6 +6,9 @@ const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD_LENGTH = 8;
 
+// Trial length when the TRIAL_DAYS env var is unset or unusable.
+const DEFAULT_TRIAL_DAYS = 14;
+
 /**
  * HTTP triggers deliver a request envelope on ctx.req ({ method, slug, query,
  * headers, body }); manual runs deliver the payload flat on ctx.event.
@@ -80,6 +83,25 @@ export const handler = async (ctx) => {
   }
 
   await ctx.appambit.db('INSERT INTO user_stats (user_id) VALUES (?)', [userId]);
+
+  // Start the 14-day Pro trial at account birth. TRIAL_DAYS is a server-side
+  // env var (Cloud Code can't read Remote Config); it defaults to 14. The
+  // user_settings row is created by save_onboarding, so this seeds a partial
+  // row with only the trial fields — save_onboarding's ON CONFLICT upsert fills
+  // the rest and leaves these columns untouched. The WHERE guard means the
+  // trial is set once and never renewed on a later run.
+  const days = Number.parseInt(ctx.env?.TRIAL_DAYS ?? '', 10);
+  const trialDays = Number.isInteger(days) && days > 0 ? days : DEFAULT_TRIAL_DAYS;
+  const trialEndsAt = new Date(Date.now() + trialDays * 86400000).toISOString();
+  await ctx.appambit.db(
+    `INSERT INTO user_settings (user_id, entitlement, trial_ends_at)
+       VALUES (?, 'pro_trial', ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       entitlement = 'pro_trial',
+       trial_ends_at = excluded.trial_ends_at
+     WHERE user_settings.trial_ends_at IS NULL`,
+    [userId, trialEndsAt],
+  );
 
   const session = signSession(ctx, userId);
   return { token: session.token, user_id: userId, expires_at: session.expiresAt };

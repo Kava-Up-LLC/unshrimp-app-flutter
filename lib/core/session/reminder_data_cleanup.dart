@@ -4,6 +4,7 @@ import '../../features/auth/repositories/token_storage.dart';
 import '../../features/notifications/repositories/delivery_log.dart';
 import '../../features/reminders/repositories/reminder_preferences.dart';
 import '../../features/reminders/services/reminder_scheduler.dart';
+import '../../features/subscriptions/services/pro_preferences.dart';
 import '../cache/cache_store.dart';
 import '../cache/cache_user_id.dart';
 import '../outbox/outbox_store.dart';
@@ -21,6 +22,9 @@ Future<void> clearReminderData(Ref ref) async {
   await ref.read(reminderSchedulerProvider).cancelAll();
   await ref.read(deliveryLogProvider).clear();
   await ref.read(reminderPreferencesProvider).clear();
+  // The Pro one-time flags ("trial started" screen, "trial ended" sheet) are
+  // per device, so the next account on it sees them afresh.
+  await ref.read(proPreferencesProvider).clear();
 
   final cache = ref.read(cacheStoreProvider);
   final outbox = ref.read(outboxStoreProvider);

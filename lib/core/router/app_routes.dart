@@ -7,10 +7,13 @@ class AppRoutes {
   static const signUp = '/sign-up';
   static const onboarding = '/onboarding';
   static const home = '/';
+  static const history = '/history';
   static const roast = '/roast';
   static const breakTime = '/break';
   static const notifications = '/notifications';
   static const reminderPermission = '/reminders/permission';
   static const settings = '/settings';
   static const changePassword = '/settings/change-password';
+  static const pro = '/pro';
+  static const trialStarted = '/trial-started';
 }

@@ -16,6 +16,8 @@ import '../widgets/notifications_bell.dart';
 import '../widgets/offline_indicator.dart';
 import '../widgets/spine_battery_card.dart';
 import '../widgets/spine_streak_card.dart';
+import '../../subscriptions/widgets/pro_status_pill.dart';
+import '../../subscriptions/widgets/trial_ended_sheet.dart';
 
 /// Home: the logged-in user's streak, Spine Battery and today's breaks.
 class HomeView extends ConsumerWidget {
@@ -40,6 +42,11 @@ class HomeView extends ConsumerWidget {
         title: const Text('Unshrimp'),
         actions: [
           const OfflineIndicator(),
+          IconButton(
+            tooltip: 'History',
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () => context.push(AppRoutes.history),
+          ),
           NotificationsBell(
             hasUnread: hasUnread,
             onPressed: () => context.push(AppRoutes.notifications),
@@ -102,6 +109,11 @@ class _HomeContent extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(height: 12),
+        const ProStatusPill(),
+        // Shows the "Your Pro trial ended" sheet once, when the trial has
+        // lapsed. Renders nothing itself.
+        const TrialEndedSheetHost(),
         const SizedBox(height: 20),
         SpineStreakCard(currentStreak: stats.currentStreak),
         const SizedBox(height: 16),

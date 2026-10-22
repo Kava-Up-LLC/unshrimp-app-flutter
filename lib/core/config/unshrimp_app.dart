@@ -47,11 +47,12 @@ class UnshrimpApp extends ConsumerWidget {
     // Re-read Home on resume so a reconnect clears the offline marker.
     ref.watch(homeResumeProvider);
 
-    // A reminder tapped while the app runs opens its break. Taps that launch
-    // the app are handled by the session gate.
+    // A reminder tapped while the app runs opens its break (or the screen it
+    // names, e.g. the Spine Report → History). Taps that launch the app are
+    // handled by the session gate.
     ref.listen(reminderTapsProvider, (_, next) {
       if (next case AsyncData(:final value)) {
-        router.go(BreakArgs.fromReminderPayload(value).location);
+        router.go(reminderTapLocation(value));
       }
     });
 

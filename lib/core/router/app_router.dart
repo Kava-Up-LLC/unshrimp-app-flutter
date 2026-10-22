@@ -7,15 +7,20 @@ import '../../features/auth/views/session_gate_view.dart';
 import '../../features/auth/views/sign_up_view.dart';
 import '../../features/break/models/break_args.dart';
 import '../../features/break/views/break_view.dart';
+import '../../features/history/views/history_view.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/notifications/views/notification_center_view.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
+import '../../features/auth/repositories/token_storage.dart';
 import '../../features/reminders/repositories/reminder_preferences.dart';
 import '../../features/reminders/views/reminder_permission_view.dart';
 import '../../features/roast/view_models/roast_gate_provider.dart';
 import '../../features/roast/views/roast_view.dart';
 import '../../features/settings/views/change_password_view.dart';
 import '../../features/settings/views/settings_view.dart';
+import '../../features/subscriptions/services/pro_preferences.dart';
+import '../../features/subscriptions/views/pro_view.dart';
+import '../../features/subscriptions/views/trial_started_view.dart';
 import 'app_routes.dart';
 import 'roast_redirect.dart';
 
@@ -80,12 +85,41 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ReminderPermissionView(),
       ),
       GoRoute(
+        path: AppRoutes.history,
+        builder: (context, state) => const HistoryView(),
+      ),
+      GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsView(),
       ),
       GoRoute(
         path: AppRoutes.changePassword,
         builder: (context, state) => const ChangePasswordView(),
+      ),
+      // Shown once, right after onboarding. The redirect enforces "once": a
+      // second visit (already shown) goes to Home, and it marks itself shown
+      // the first time it is allowed through. Signed out → the splash gate.
+      GoRoute(
+        path: AppRoutes.trialStarted,
+        redirect: (context, state) async {
+          final token = await ref.read(tokenStorageProvider).read();
+          if (token == null) return AppRoutes.splash;
+          final prefs = ref.read(proPreferencesProvider);
+          if (await prefs.wasTrialStartedShown()) return AppRoutes.home;
+          await prefs.markTrialStartedShown();
+          return null;
+        },
+        builder: (context, state) => const TrialStartedView(),
+      ),
+      // The Pro screen is reachable only with a session (so never before sign
+      // up / onboarding, which is the only pre-session flow).
+      GoRoute(
+        path: AppRoutes.pro,
+        redirect: (context, state) async =>
+            await ref.read(tokenStorageProvider).read() == null
+            ? AppRoutes.splash
+            : null,
+        builder: (context, state) => const ProView(),
       ),
     ],
   );

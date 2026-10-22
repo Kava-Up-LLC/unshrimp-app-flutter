@@ -95,7 +95,7 @@ class SessionGateViewModel extends AsyncNotifier<SessionStart> {
           .read(reminderNotificationsProvider)
           .launchPayload();
       if (payload != null) {
-        return BreakArgs.fromReminderPayload(payload).location;
+        return reminderTapLocation(payload);
       }
     } catch (_) {
       // Notifications unavailable: open Home as usual.

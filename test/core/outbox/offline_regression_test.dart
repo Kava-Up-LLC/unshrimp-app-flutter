@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unshrimp_app/features/subscriptions/repositories/entitlement_repository.dart';
+
+import '../../features/subscriptions/fakes.dart';
 import 'package:unshrimp_app/core/cache/cache_status.dart';
 import 'package:unshrimp_app/core/cache/cache_user_id.dart';
 import 'package:unshrimp_app/core/cache/cached_read.dart';
@@ -85,6 +88,7 @@ Future<void> _pump() async {
 ProviderContainer _container(_FakeHome home) {
   final c = ProviderContainer(
     overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
       tokenStorageProvider.overrideWithValue(FakeTokenStorage('t')),
       homeRepositoryProvider.overrideWithValue(home),
     ],

@@ -1,5 +1,9 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unshrimp_app/features/subscriptions/repositories/entitlement_repository.dart';
+
+import 'features/subscriptions/fakes.dart';
 
 import 'package:unshrimp_app/core/config/unshrimp_app.dart';
 import 'package:unshrimp_app/features/auth/repositories/auth_repository.dart';
@@ -22,6 +26,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
           reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
@@ -44,6 +49,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
           reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
@@ -65,6 +71,12 @@ void main() {
     expect(find.text('4 days'), findsOneWidget);
     expect(find.text('40%'), findsOneWidget);
     expect(find.text('2 breaks'), findsOneWidget);
+    // The Pro pill pushes the CTA below the test fold; scroll it into view.
+    await tester.scrollUntilVisible(
+      find.text('Take a break now'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Take a break now'), findsOneWidget);
   });
 
@@ -75,6 +87,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
           reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),

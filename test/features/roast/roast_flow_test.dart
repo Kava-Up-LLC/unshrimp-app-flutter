@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unshrimp_app/features/subscriptions/repositories/entitlement_repository.dart';
+
+import '../subscriptions/fakes.dart';
 
 import '../../support/in_memory_prefs.dart';
 import 'package:unshrimp_app/core/analytics/event_log.dart';
@@ -68,6 +71,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
           reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           // Launch with roast_pending true; a survived break clears it.

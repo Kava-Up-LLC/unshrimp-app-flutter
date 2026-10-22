@@ -59,6 +59,25 @@ class DailyCall extends NotificationCall {
   final String? payload;
 }
 
+class WeeklyCall extends NotificationCall {
+  WeeklyCall(
+    this.id,
+    this.weekday,
+    this.hour,
+    this.minute,
+    this.body,
+    this.quiet,
+    this.payload,
+  );
+  final int id;
+  final int weekday;
+  final int hour;
+  final int minute;
+  final String body;
+  final bool quiet;
+  final String? payload;
+}
+
 class OnceCall extends NotificationCall {
   OnceCall(this.id, this.delay, this.body, this.payload);
   final int id;
@@ -91,6 +110,7 @@ class FakeReminderNotifications implements ReminderNotifications {
   Future<String?> launchPayload() async => launch;
 
   List<DailyCall> get daily => calls.whereType<DailyCall>().toList();
+  List<WeeklyCall> get weekly => calls.whereType<WeeklyCall>().toList();
 
   @override
   Future<bool> requestPermission() async => granted;
@@ -110,6 +130,18 @@ class FakeReminderNotifications implements ReminderNotifications {
     required bool quiet,
     String? payload,
   }) async => calls.add(DailyCall(id, hour, minute, body, quiet, payload));
+
+  @override
+  Future<void> scheduleWeekly({
+    required int id,
+    required int weekday,
+    required int hour,
+    required int minute,
+    required String body,
+    required bool quiet,
+    String? payload,
+  }) async =>
+      calls.add(WeeklyCall(id, weekday, hour, minute, body, quiet, payload));
 
   @override
   Future<void> scheduleOnce({

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unshrimp_app/features/subscriptions/repositories/entitlement_repository.dart';
+
+import '../subscriptions/fakes.dart';
 import 'package:unshrimp_app/core/analytics/event_log.dart';
 import 'package:unshrimp_app/core/config/unshrimp_app.dart';
 import 'package:unshrimp_app/features/auth/repositories/auth_repository.dart';
@@ -58,6 +61,7 @@ Future<FakeReminderNotifications> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+          entitlementRepositoryProvider.overrideWithValue(FakeEntitlementRepository()),
         reconcileRepositoryProvider.overrideWithValue(FakeReconcileRepository()),
         authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
         homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),

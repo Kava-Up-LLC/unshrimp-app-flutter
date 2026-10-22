@@ -7,6 +7,7 @@ import 'package:unshrimp_app/features/reminders/models/reminder_payload.dart';
 import 'package:unshrimp_app/features/reminders/repositories/sarcasm_pack_repository.dart';
 import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 import 'package:unshrimp_app/features/settings/models/user_settings.dart';
+import 'package:unshrimp_app/features/subscriptions/models/entitlement.dart';
 
 import '../auth/fakes.dart';
 import '../notifications/fakes.dart';
@@ -16,9 +17,13 @@ import 'fakes.dart';
 final _now = DateTime.utc(2026, 9, 29, 12);
 
 class _Setup {
-  _Setup({String? token = 't', AuthException? fetchError})
+  _Setup({String? token = 't', AuthException? fetchError, this.entitlement})
     : settings = FakeSettingsRepository(fetchError: fetchError),
       tokens = FakeTokenStorage(token);
+
+  /// Entitlement the scheduler reads (for the trial warning and Spine Report);
+  /// null → no lookup wired, which reads as Free.
+  final Entitlement? entitlement;
 
   final notifications = FakeReminderNotifications();
   final log = FakeEventLog();
@@ -50,6 +55,7 @@ class _Setup {
     tokens: tokens,
     sync: sync,
     log: log,
+    entitlementOf: entitlement == null ? null : (_) async => entitlement!,
     random: Random(1),
     now: () => now,
   );
@@ -68,7 +74,45 @@ UserSettings _settings({DateTime? pausedUntil, bool quiet = false}) =>
       pausedUntil: pausedUntil,
     );
 
+UserSettings _settingsDays(List<bool> workDays) => UserSettings(
+  activeStart: '09:00',
+  activeEnd: '12:00',
+  reminderIntervalMin: 60,
+  graceWindowMin: 60,
+  dailyGoal: 5,
+  tone: 'direct',
+  painZone: 'neck',
+  quietMode: false,
+  pausedUntil: null,
+  workDays: workDays,
+);
+
 void main() {
+  test('with rest days, schedules weekly per work weekday and skips the rest', () async {
+    final s = _Setup();
+    // Mon and Tue worked; the other five are rest days.
+    await s.scheduler.reschedule(
+      _settingsDays([true, true, false, false, false, false, false]),
+    );
+
+    expect(s.notifications.daily, isEmpty); // no plain daily reminders
+    expect(s.notifications.weekly, hasLength(6)); // 3 slots x 2 work days
+    expect(s.notifications.weekly.map((c) => c.weekday).toSet(), {
+      DateTime.monday,
+      DateTime.tuesday,
+    });
+    for (final weekday in [DateTime.monday, DateTime.tuesday]) {
+      expect(
+        s.notifications.weekly
+            .where((c) => c.weekday == weekday)
+            .map((c) => c.hour)
+            .toList()
+          ..sort(),
+        [10, 11, 12],
+      );
+    }
+  });
+
   test('cancels the old reminders first, then schedules each slot', () async {
     final s = _Setup();
 
@@ -174,6 +218,36 @@ void main() {
     // 10:00 and 11:00 fired under the previous schedule.
     expect(s.rows.logged.single.map((r) => r.sentAt.hour), [10, 11]);
     expect(s.rows.logged.single.first.pack, 'default');
+  });
+
+  test('schedules the weekly Spine Report on Monday 9:00 for a Pro/trial user', () async {
+    final s = _Setup(
+      entitlement: const Entitlement(isPro: true, entitlement: 'pro_trial'),
+    );
+
+    await s.scheduler.reschedule(_settings());
+
+    final report = s.notifications.weekly.singleWhere(
+      (c) => c.id == ReminderScheduler.spineReportId,
+    );
+    expect((report.weekday, report.hour, report.minute), (DateTime.monday, 9, 0));
+    expect(report.body, 'Your Spine Report is ready.');
+    expect(report.quiet, isFalse);
+    // Tapping it opens History, not a break.
+    expect(ReminderPayload.decode(report.payload).route, '/history');
+    expect(s.log.events, contains('spine_report_scheduled'));
+  });
+
+  test('does not schedule the weekly Spine Report for a Free user', () async {
+    final s = _Setup(entitlement: Entitlement.free);
+
+    await s.scheduler.reschedule(_settings());
+
+    expect(
+      s.notifications.weekly.where((c) => c.id == ReminderScheduler.spineReportId),
+      isEmpty,
+    );
+    expect(s.log.events, isNot(contains('spine_report_scheduled')));
   });
 
   test('logout logs the shown reminders, then forgets the schedule', () async {

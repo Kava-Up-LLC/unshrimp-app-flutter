@@ -33,7 +33,8 @@ List<DeliveredReminder> deliveredReminders({
       continue;
     }
 
-    // Daily: one firing per local day at hour:minute.
+    // Daily: one firing per local day at hour:minute. A weekday-bound reminder
+    // (set when the user has rest days) only fires on its own weekday.
     final start = from.toLocal();
     final end = now.toLocal();
     for (
@@ -41,6 +42,7 @@ List<DeliveredReminder> deliveredReminders({
       !day.isAfter(end);
       day = DateTime(day.year, day.month, day.day + 1)
     ) {
+      if (reminder.weekday != null && day.weekday != reminder.weekday) continue;
       final time = DateTime(
         day.year,
         day.month,

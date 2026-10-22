@@ -9,6 +9,7 @@ class ScheduledReminder {
     required this.body,
     required this.pack,
     required this.scheduledAt,
+    this.weekday,
   }) : at = null;
 
   const ScheduledReminder.once({
@@ -18,7 +19,8 @@ class ScheduledReminder {
     required this.pack,
     required this.scheduledAt,
   }) : hour = null,
-       minute = null;
+       minute = null,
+       weekday = null;
 
   /// Identifies this reminder in its notification payload and its
   /// `notifications` rows. Null for records saved before keys existed.
@@ -26,6 +28,10 @@ class ScheduledReminder {
 
   final int? hour;
   final int? minute;
+
+  /// Weekday this reminder repeats on (DateTime.weekday: 1 = Mon .. 7 = Sun),
+  /// or null when it repeats every day. Only meaningful for daily reminders.
+  final int? weekday;
 
   /// Fire time of a one-off reminder (the debug one); null for daily ones.
   final DateTime? at;
@@ -41,6 +47,7 @@ class ScheduledReminder {
     'key': key,
     'hour': hour,
     'minute': minute,
+    'weekday': weekday,
     'at': at?.toUtc().toIso8601String(),
     'body': body,
     'pack': pack,
@@ -65,6 +72,7 @@ class ScheduledReminder {
             key: key,
             hour: json['hour'] as int,
             minute: json['minute'] as int,
+            weekday: json['weekday'] as int?,
             body: body,
             pack: pack,
             scheduledAt: scheduledAt,

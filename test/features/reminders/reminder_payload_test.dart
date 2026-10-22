@@ -16,6 +16,13 @@ void main() {
     expect((decoded.zone, decoded.key), (null, 'o1'));
   });
 
+  test('round-trips a route (the Spine Report opens History)', () {
+    final decoded = ReminderPayload.decode(
+      const ReminderPayload(route: '/history').encode(),
+    );
+    expect((decoded.route, decoded.zone, decoded.key), ('/history', null, null));
+  });
+
   test('an older plain-zone payload still gives the zone', () {
     final decoded = ReminderPayload.decode('shoulders');
     expect((decoded.zone, decoded.key), ('shoulders', null));

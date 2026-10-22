@@ -7,8 +7,13 @@ import '../../notifications/models/scheduled_reminder.dart';
 import '../../notifications/services/notification_sync.dart';
 import '../../settings/models/user_settings.dart';
 import '../../settings/repositories/settings_repository.dart';
+import '../../subscriptions/models/entitlement.dart';
+import '../../subscriptions/repositories/entitlement_repository.dart';
+import '../../subscriptions/view_models/trial_config_provider.dart';
 import '../../../core/analytics/event_log.dart';
+import '../../../core/router/app_routes.dart';
 import '../models/reminder_payload.dart';
+import '../models/reminder_slot.dart';
 import '../repositories/reminder_notifications.dart';
 import '../repositories/sarcasm_pack_repository.dart';
 import 'reminder_planner.dart';
@@ -26,6 +31,7 @@ class ReminderScheduler {
     required TokenStorage tokens,
     required NotificationSync sync,
     required EventLog log,
+    Future<Entitlement> Function(String token)? entitlementOf,
     Random? random,
     DateTime Function()? now,
   }) : _notifications = notifications,
@@ -34,6 +40,8 @@ class ReminderScheduler {
        _tokens = tokens,
        _sync = sync,
        _log = log,
+       // No lookup wired (e.g. in reminder tests) → no trial, so no warning.
+       _entitlementOf = entitlementOf ?? ((_) async => Entitlement.free),
        _random = random ?? Random(),
        _now = now ?? DateTime.now;
 
@@ -41,12 +49,22 @@ class ReminderScheduler {
   static const testReminderId = 9999;
   static const testReminderDelay = Duration(seconds: 5);
 
+  /// Id of the one-shot trial-ending warning. Distinct from the daily slots and
+  /// the debug reminder so it survives their rescheduling — and it is re-armed
+  /// at the end of every reschedule, because that path cancels all reminders.
+  static const trialWarningId = 9998;
+
+  /// Id of the weekly Spine Report notification (Monday 9:00). Its own id, like
+  /// the trial warning, so it survives rescheduling; re-armed after cancelAll.
+  static const spineReportId = 9997;
+
   final ReminderNotifications _notifications;
   final SarcasmPackRepository _sarcasmPack;
   final SettingsRepository _settings;
   final TokenStorage _tokens;
   final NotificationSync _sync;
   final EventLog _log;
+  final Future<Entitlement> Function(String token) _entitlementOf;
   final Random _random;
   final DateTime Function() _now;
 
@@ -142,27 +160,58 @@ class ReminderScheduler {
     await _sync.sync();
     await _notifications.cancelAll();
 
-    // Consecutive slots get consecutive lines, from a random starting point.
+    // Flatten the slots into the notifications to schedule. With every day
+    // worked (the default) each slot repeats daily, exactly as before. With
+    // rest days, each slot repeats weekly on each work weekday, so nothing
+    // fires on a rest day. Capped the same way, under the OS pending limit.
+    final workWeekdays = [
+      for (var d = 1; d <= 7; d++)
+        if (settings.isWorkWeekday(d)) d,
+    ];
+    final entries = <({ReminderSlot slot, int? weekday})>[
+      if (settings.everyDayWorked)
+        for (final slot in slots) (slot: slot, weekday: null)
+      else
+        for (final weekday in workWeekdays)
+          for (final slot in slots) (slot: slot, weekday: weekday),
+    ].take(maxReminderSlots).toList();
+
+    // Consecutive entries get consecutive lines, from a random starting point.
     final lines = pack?.lines ?? const <String>[];
     final offset = lines.isEmpty ? 0 : _random.nextInt(lines.length);
     final scheduled = <ScheduledReminder>[];
-    for (final (i, slot) in slots.indexed) {
+    for (final (i, entry) in entries.indexed) {
+      final slot = entry.slot;
       final body = lines[(offset + i) % lines.length];
       final key = 'd${now.microsecondsSinceEpoch}-$i';
-      await _notifications.scheduleDaily(
-        id: i,
-        hour: slot.hour,
-        minute: slot.minute,
-        body: body,
-        quiet: settings.quietMode,
-        // Tapping opens the break for this zone and marks this reminder's row.
-        payload: ReminderPayload(zone: settings.painZone, key: key).encode(),
-      );
+      // Tapping opens the break for this zone and marks this reminder's row.
+      final payload = ReminderPayload(zone: settings.painZone, key: key).encode();
+      if (entry.weekday == null) {
+        await _notifications.scheduleDaily(
+          id: i,
+          hour: slot.hour,
+          minute: slot.minute,
+          body: body,
+          quiet: settings.quietMode,
+          payload: payload,
+        );
+      } else {
+        await _notifications.scheduleWeekly(
+          id: i,
+          weekday: entry.weekday!,
+          hour: slot.hour,
+          minute: slot.minute,
+          body: body,
+          quiet: settings.quietMode,
+          payload: payload,
+        );
+      }
       scheduled.add(
         ScheduledReminder.daily(
           key: key,
           hour: slot.hour,
           minute: slot.minute,
+          weekday: entry.weekday,
           body: body,
           pack: pack!.active,
           scheduledAt: now,
@@ -172,12 +221,71 @@ class ReminderScheduler {
     await _sync.recordSchedule(scheduled);
 
     _log.log('reminders_scheduled', {
-      'count': '${slots.length}',
+      'count': '${entries.length}',
       'interval_min': '${settings.reminderIntervalMin}',
+      'work_days': settings.workDaysMask,
       'paused': '${settings.isPausedAt(_now())}',
       'quiet': '${settings.quietMode}',
       'pack': pack?.active ?? '',
     });
+
+    // cancelAll above wiped every reminder, so re-arm the standalone ones here.
+    await _armTrialWarning();
+    await _armSpineReport();
+  }
+
+  /// (Re)schedules the weekly Spine Report notification: every Monday at 9:00,
+  /// "Your Spine Report is ready.", opening History on tap. Only while the user
+  /// is Pro or in the trial; Free gets nothing. Failures are logged, never
+  /// thrown.
+  Future<void> _armSpineReport() async {
+    try {
+      final token = await _tokens.read();
+      if (token == null) return;
+      final entitlement = await _entitlementOf(token);
+      if (!entitlement.isPro) return; // paid or trial only
+
+      await _notifications.scheduleWeekly(
+        id: spineReportId,
+        weekday: DateTime.monday,
+        hour: 9,
+        minute: 0,
+        body: 'Your Spine Report is ready.',
+        quiet: false,
+        payload: const ReminderPayload(route: AppRoutes.history).encode(),
+      );
+      _log.log('spine_report_scheduled');
+    } catch (e) {
+      _log.log('spine_report_schedule_failed', {'error': e.toString()});
+    }
+  }
+
+  /// (Re)schedules the one-shot trial-ending warning: a single local
+  /// notification `trial_warning_days` before `trial_ends_at`, with
+  /// `trial_warning_text`. Only while a trial is actually running and the
+  /// warning moment is still in the future. Failures are logged, never thrown.
+  Future<void> _armTrialWarning() async {
+    try {
+      final token = await _tokens.read();
+      if (token == null) return;
+      final entitlement = await _entitlementOf(token);
+      final endsAt = entitlement.trialEndsAt;
+      if (!entitlement.isTrial || endsAt == null) return;
+
+      final fireAt = endsAt.subtract(Duration(days: await trialWarningDays()));
+      final delay = fireAt.difference(_now());
+      if (delay <= Duration.zero) return; // the warning moment already passed
+
+      await _notifications.scheduleOnce(
+        id: trialWarningId,
+        delay: delay,
+        body: await trialWarningText(),
+        quiet: false,
+      );
+      _log.log('trial_warning_scheduled', {'in_days': '${delay.inDays}'});
+    } catch (e) {
+      _log.log('trial_warning_schedule_failed', {'error': e.toString()});
+    }
   }
 }
 
@@ -189,5 +297,7 @@ final reminderSchedulerProvider = Provider<ReminderScheduler>(
     tokens: ref.read(tokenStorageProvider),
     sync: ref.read(notificationSyncProvider),
     log: ref.read(eventLogProvider),
+    entitlementOf: (token) =>
+        ref.read(entitlementRepositoryProvider).fetch(token),
   ),
 );

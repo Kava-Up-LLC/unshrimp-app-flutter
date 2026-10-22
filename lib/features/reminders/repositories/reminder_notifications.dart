@@ -109,6 +109,34 @@ class ReminderNotifications {
     );
   }
 
+  /// Fires every week on [weekday] (DateTime.weekday: 1 = Mon .. 7 = Sun) at
+  /// [hour]:[minute] local time. Used when the user has rest days, so reminders
+  /// land only on the weekdays they work.
+  Future<void> scheduleWeekly({
+    required int id,
+    required int weekday,
+    required int hour,
+    required int minute,
+    required String body,
+    required bool quiet,
+    String? payload,
+  }) async {
+    await _init();
+    final now = tz.TZDateTime.now(tz.local);
+    var at = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    while (at.weekday != weekday || !at.isAfter(now)) {
+      at = at.add(const Duration(days: 1));
+    }
+    await _schedule(
+      id: id,
+      at: at,
+      body: body,
+      quiet: quiet,
+      payload: payload,
+      repeat: DateTimeComponents.dayOfWeekAndTime,
+    );
+  }
+
   /// Fires once, [delay] from now.
   Future<void> scheduleOnce({
     required int id,

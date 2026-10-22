@@ -14,6 +14,16 @@ ScheduledReminder _daily(int hour, [String body = 'Sit up.']) =>
       scheduledAt: _scheduledAt,
     );
 
+ScheduledReminder _weekly(int hour, int weekday) => ScheduledReminder.daily(
+  key: 'k-weekly',
+  hour: hour,
+  minute: 0,
+  weekday: weekday,
+  body: 'Sit up.',
+  pack: 'default',
+  scheduledAt: _scheduledAt,
+);
+
 List<String> _shown(
   List<ScheduledReminder> schedule, {
   DateTime? since,
@@ -37,6 +47,14 @@ void main() {
         _daily(12, 'C'),
       ], now: DateTime(2026, 9, 29, 11, 30)),
       ['29 10:00 A', '29 11:00 B'],
+    );
+  });
+
+  test('a weekday-bound reminder fires only on its weekday', () {
+    // Sep 29 2026 is a Tuesday; the next is Oct 6. Nothing on the days between.
+    expect(
+      _shown([_weekly(10, DateTime.tuesday)], now: DateTime(2026, 10, 6, 11)),
+      ['29 10:00 Sit up.', '6 10:00 Sit up.'],
     );
   });
 

@@ -17,6 +17,7 @@ import '../view_models/settings_view_model.dart';
 import '../widgets/option_sheet.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_row.dart';
+import '../widgets/work_days_sheet.dart';
 
 /// Settings: the logged-in user's `user_settings` row, editable in place.
 class SettingsView extends ConsumerWidget {
@@ -88,6 +89,11 @@ class _SettingsContent extends StatelessWidget {
               label: 'Active hours',
               value: '${settings.activeStart} to ${settings.activeEnd}',
               onTap: enabled ? () => _pickActiveHours(context) : null,
+            ),
+            SettingsRow(
+              label: 'Work days',
+              value: _workDaysLabel(settings.workDays),
+              onTap: enabled ? () => _pickWorkDays(context) : null,
             ),
             SettingsRow(
               label: 'Remind me every',
@@ -231,6 +237,23 @@ class _SettingsContent extends StatelessWidget {
       endHour: end.hour,
       endMinute: end.minute,
     );
+  }
+
+  Future<void> _pickWorkDays(BuildContext context) async {
+    final days = await showWorkDaysSheet(context, state.settings.workDays);
+    if (days != null) await viewModel.workDaysChanged(days);
+  }
+
+  static const _dayAbbrev = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  /// "Every day", or the worked days abbreviated ("Mon, Tue, …"). Mon first.
+  static String _workDaysLabel(List<bool> days) {
+    if (days.every((worked) => worked)) return 'Every day';
+    final worked = [
+      for (var i = 0; i < days.length; i++)
+        if (days[i]) _dayAbbrev[i],
+    ];
+    return worked.isEmpty ? 'No days' : worked.join(', ');
   }
 
   Future<void> _pickInterval(BuildContext context) async {

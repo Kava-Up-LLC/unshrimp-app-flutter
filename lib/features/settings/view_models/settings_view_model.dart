@@ -70,6 +70,11 @@ class SettingsViewModel extends AsyncNotifier<SettingsState> {
   Future<void> quietModeChanged(bool enabled) =>
       _update({'quiet_mode': enabled});
 
+  /// Saves which weekdays the user works (Mon first). Rescheduling (in [_update])
+  /// then drops reminders on the new rest days.
+  Future<void> workDaysChanged(List<bool> days) =>
+      _update({'active_days': days.map((worked) => worked ? '1' : '0').join()});
+
   Future<void> pause(PauseOption option) => _update({
     'paused_until': DateTime.now()
         .add(option.duration)

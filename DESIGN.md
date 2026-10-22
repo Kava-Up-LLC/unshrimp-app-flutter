@@ -79,8 +79,11 @@ Already built in Day 1 to read `user_stats`. Layout the design targets:
 ## 6 · Settings (feature: `settings`)
 Grouped rows on white cards. Each row edits `user_settings` via `update_settings` (except
 password and logout):
-- Group 1: "Active hours" → `09:00 to 18:00` · "Remind me every" → `60 min` · "Daily goal"
-  → `4 breaks`. (Values come from the user's row; these are editable.)
+- Group 1: "Active hours" → `09:00 to 18:00` · "Work days" → the weekdays the user works
+  (`Mon, Tue, …` or `Every day`), edited in a sheet with one toggle per day, Mon first, at
+  least one on · "Remind me every" → `60 min` · "Daily goal" → `4 breaks`. (Values come from
+  the user's row; these are editable. Work days is `active_days`; reminders and the streak
+  skip the days that are off.)
 - Group 2: "Quiet mode" → toggle for `quiet_mode` (per-user, NOT global Remote Config): when
   on, reminders arrive silently (low priority, no sound/banner), still logged and counted ·
   "Pause reminders" → opens options that set `paused_until` (sick or on vacation).
@@ -89,6 +92,72 @@ password and logout):
 
 States for every screen: idle / loading (disable the primary button, show a spinner) /
 error (show the backend message). No placeholder data — always the logged-in user's row.
+
+---
+
+## 7 · History (feature: `history`)
+The per-day record, reached from a chart icon on the Home app bar. Reads `get_stats_history`
+through the read cache, so it opens offline with the last thing it saw (same Offline chip as
+Home). **Free** sees today's card and the weeks **blurred** behind an "Unlock your history ·
+Pro" lock that opens the Pro screen; **Pro** sees the full weeks. The server enforces this —
+`get_stats_history` returns only today for Free (`is_pro:false`). Layout (Pro):
+- App bar: "History", with the Offline chip when serving cached data.
+- **Today** card on top (teal container): today's `breaks / daily_goal` and a check when met.
+- **Summary** row: **best streak** (amber, longest run of goal-met days in the window) and
+  **days goal met** in the window.
+- **One card per week**, newest on top. Up to three recent weeks are read, and a week with no
+  activity at all is hidden, so the screen never shows a row of empty days. Each card has a
+  header (date range, with the ignored-reminders count on the right in coral) and **one row
+  per day**, oldest on top:
+  - A bar that **fills toward the daily goal** (`breaks / daily_goal`, capped full) with the
+    day's `breaks / goal` and a check once met. Fill: **met** → teal (`primary`); **partial**
+    → amber (`tertiary`); **missed** → empty track. The filling bar is deliberate — progress
+    toward the goal reads as a small reward a status dot could not convey.
+  - A **rest day** (a weekday the user does not work, from `active_days`) shows a muted
+    "Rest day" row with a moon icon, no bar and no count — never a missed-goal bar. Rest days
+    are skipped by the streak server-side: a goal met before and after bridges across them.
+- Empty window (new user) shows no week cards, never a blank screen or placeholder data.
+
+---
+
+## 8 · Pro / Subscriptions (feature: `subscriptions`)
+
+A 14-day Pro trial, decided entirely in the cloud (`get_entitlements`), shown where each Pro
+thing lives — locks, not a wall. All copy in English; the word "server" never appears. Palette:
+**teal** = a healthy trial / paid Pro; **amber** (`tertiary`) = the trial is almost over;
+**coral** (`secondary`) = the Pro lock tag.
+
+- **Trial started** (`trial_started`, shown once right after onboarding): a full screen —
+  premium icon, "Your N-day Pro trial has started", the three benefits each with a teal check,
+  the line "No card needed. After N days you keep the basics for free.", a primary **"Start my
+  trial"** and a close **X** (both → Home), and a secondary **"Subscribe now"** (→ Pro). N is
+  the real trial length. The route marks itself shown, so it never reappears.
+- **Home status pill** (under the greeting, opens Pro): teal **"Pro trial · N days left"**;
+  amber **"Trial ends in N days"** when N ≤ `trial_warning_days`; **"Free plan · See Pro"** when
+  Free; **"Pro"** when paid.
+- **Locks** (coral tag, tap → Pro): under the break's exercise a row **"More exercises for your
+  {zone} · Pro"** (Free only; never interrupts a break in progress); History weeks blurred with
+  **"Unlock your history · Pro"**.
+- **Pro screen** (`pro`): title **"Unshrimp Pro"**; the trial line ("Your trial ends Oct 30" /
+  "Your trial ended" / "You're on Unshrimp Pro"); three benefit rows (all exercises for your
+  pain zone, your full history, your weekly Spine Report); the honest line "Free keeps reminders,
+  the Posture Roast, the Spine Battery and your streak."; two plan cards — **Monthly** and
+  **Yearly** (Yearly tagged **Best value**, selected by default) — with prices from Remote
+  Config `pro_price_labels`; a **Subscribe** button (spinner while buying, screen ignores taps);
+  Terms and Privacy links. Purchases go through a `PurchaseService.buy(plan)` returning
+  purchased / cancelled / failed; until the store is connected the default returns **failed** and
+  the screen shows "Purchases open soon. Your trial keeps everything unlocked."
+- **Welcome modal** (on `purchased`): a check, "Welcome to Unshrimp Pro", the three benefits,
+  and **"Let's go"** — which refreshes `get_entitlements` bypassing the cache and returns the
+  user to where they were.
+- **Trial-ended sheet** (bottom sheet, shown once on the next open after the trial lapses): "Your
+  Pro trial ended", what stays free and what is now Pro, with **"See Pro"** and **"Continue
+  free"**. Dismissible — not a wall.
+- **Trial-warning notification**: one local notification `trial_warning_days` before
+  `trial_ends_at` with `trial_warning_text`, scheduled the same way reminders are (re-armed after
+  each reschedule).
+- **Offline**: a Pro user with no network stays Pro for `entitlement_grace_days`; past that it
+  reads as Free.
 
 ---
 

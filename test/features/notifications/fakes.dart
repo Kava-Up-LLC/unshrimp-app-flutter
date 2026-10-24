@@ -55,6 +55,7 @@ class FakeNotificationsRepository implements NotificationsRepository {
   /// Thrown by every call.
   AuthException? error;
   final logged = <List<DeliveredReminder>>[];
+  final recordedPushes = <({String? title, String? body, String? open})>[];
   final markedRead = <int>[];
   final deleted = <int>[];
   int markAllReadCalls = 0;
@@ -76,6 +77,41 @@ class FakeNotificationsRepository implements NotificationsRepository {
         ),
       );
     }
+  }
+
+  @override
+  Future<void> recordPush(
+    String token, {
+    String? title,
+    String? body,
+    String? open,
+  }) async {
+    if (error != null) throw error!;
+    recordedPushes.add((title: title, body: body, open: open));
+    // Mirror record_push's dedup: one row per (title, body, open, day).
+    final now = asOf ?? DateTime.now();
+    final day = DateTime.utc(now.year, now.month, now.day);
+    final exists = rows.any(
+      (n) =>
+          n.isPush &&
+          n.title == (title ?? '') &&
+          n.body == (body ?? '') &&
+          (n.open ?? '') == (open ?? '') &&
+          DateTime.utc(n.sentAt.year, n.sentAt.month, n.sentAt.day) == day,
+    );
+    if (exists) return;
+    rows.add(
+      AppNotification(
+        id: rows.length + 1,
+        title: title ?? '',
+        body: body ?? '',
+        pack: '',
+        sentAt: now,
+        read: false,
+        kind: 'push',
+        open: open,
+      ),
+    );
   }
 
   @override

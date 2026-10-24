@@ -1,3 +1,4 @@
+import 'package:appambit_sdk_push_notifications/appambit_sdk_push_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:unshrimp_app/features/auth/models/auth_exception.dart';
@@ -5,19 +6,26 @@ import 'package:unshrimp_app/features/auth/repositories/auth_repository.dart';
 import 'package:unshrimp_app/features/auth/repositories/token_storage.dart';
 import 'package:unshrimp_app/features/auth/models/session_status.dart';
 import 'package:unshrimp_app/features/auth/view_models/session_gate_view_model.dart';
+import 'package:unshrimp_app/features/push/services/push_bridge.dart';
+import 'package:unshrimp_app/features/push/view_models/push_providers.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 
 import 'fakes.dart';
 import '../reminders/fakes.dart';
 
-ProviderContainer _container(FakeTokenStorage store, FakeAuthRepository auth) {
+ProviderContainer _container(
+  FakeTokenStorage store,
+  FakeAuthRepository auth, {
+  PushBridge? pushBridge,
+}) {
   final container = ProviderContainer(
     overrides: [
       tokenStorageProvider.overrideWithValue(store),
       authRepositoryProvider.overrideWithValue(auth),
       reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
       reminderNotificationsProvider.overrideWithValue(FakeReminderNotifications()),
+      if (pushBridge != null) pushBridgeProvider.overrideWithValue(pushBridge),
     ],
   );
   addTearDown(container.dispose);
@@ -77,5 +85,19 @@ void main() {
 
     expect(start.status, SessionStatus.authenticated);
     expect(store.token, 'legacy'); // kept, not cleared
+  });
+
+  test('a push that launched the app routes the start to its open screen', () async {
+    final store = FakeTokenStorage('t', future);
+    final bridge = PushBridge();
+    addTearDown(bridge.dispose);
+    // No listener yet = the cold-start launch tap.
+    bridge.handleOpened(const PushNotificationData(data: {'open': 'report'}));
+
+    final start = await _container(store, FakeAuthRepository(), pushBridge: bridge)
+        .read(sessionGateViewModelProvider.future);
+
+    expect(start.status, SessionStatus.authenticated);
+    expect(start.location, '/history?focus=report'); // not Home
   });
 }

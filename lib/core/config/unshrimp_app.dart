@@ -5,6 +5,10 @@ import '../../features/auth/view_models/session_refresh_provider.dart';
 import '../../features/break/models/break_args.dart';
 import '../../features/home/view_models/home_resume_provider.dart';
 import '../../features/reconcile/view_models/reconcile_runner_provider.dart';
+import '../../features/push/view_models/push_center_recorder.dart';
+import '../../features/push/view_models/push_navigation.dart';
+import '../../features/push/view_models/push_providers.dart';
+import '../../features/push/widgets/push_banner.dart';
 import '../../features/reminders/view_models/reminder_resume_provider.dart';
 import '../../features/reminders/view_models/reminder_taps_provider.dart';
 import '../../features/roast/view_models/roast_gate_provider.dart';
@@ -51,6 +55,9 @@ class UnshrimpApp extends ConsumerWidget {
     // current (renewals/cancellations are invisible to the cloud). A no-op when
     // signed out, purchases disabled, or the store is unavailable.
     ref.watch(launchRestoreProvider);
+    // Store every received push (foreground or tapped) in the Notification
+    // Center so it shows there with the bell badge.
+    ref.watch(pushCenterRecorderProvider);
 
     // A reminder tapped while the app runs opens its break (or the screen it
     // names, e.g. the Spine Report → History). Taps that launch the app are
@@ -61,12 +68,23 @@ class UnshrimpApp extends ConsumerWidget {
       }
     });
 
+    // A tapped push (foreground, background, or the tap that launched the app)
+    // navigates by its `open` key. A cold-start tap is buffered and replayed
+    // here once the router is up, so it lands after the splash.
+    ref.listen(pushOpenedProvider, (_, next) {
+      if (next case AsyncData(:final value)) {
+        openPush(ref, router, value);
+      }
+    });
+
     return MaterialApp.router(
       title: 'Unshrimp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: router,
+      builder: (context, child) =>
+          PushBannerHost(child: child ?? const SizedBox.shrink()),
     );
   }
 }

@@ -10,6 +10,8 @@ class AppNotification {
     required this.read,
     this.wasIgnored = false,
     this.reminderKey,
+    this.kind = 'reminder',
+    this.open,
   });
 
   final int id;
@@ -27,6 +29,15 @@ class AppNotification {
   /// Key of the scheduled reminder behind this row; null for older rows.
   final String? reminderKey;
 
+  /// `reminder` (the default) or `push` for a received push stored here.
+  final String kind;
+
+  /// A push row's go_router open key; tapping the row navigates there.
+  final String? open;
+
+  /// True when this row is a received push, not a reminder.
+  bool get isPush => kind == 'push';
+
   AppNotification copyWith({bool? read}) => AppNotification(
     id: id,
     title: title,
@@ -36,6 +47,8 @@ class AppNotification {
     read: read ?? this.read,
     wasIgnored: wasIgnored,
     reminderKey: reminderKey,
+    kind: kind,
+    open: open,
   );
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
@@ -50,5 +63,7 @@ class AppNotification {
         read: json['read'] == true,
         wasIgnored: json['was_ignored'] == true,
         reminderKey: json['reminder_key']?.toString(),
+        kind: json['kind']?.toString() ?? 'reminder',
+        open: json['open']?.toString(),
       );
 }

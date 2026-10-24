@@ -30,6 +30,21 @@ class NotificationsRepository {
         'notifications': [for (final r in reminders) r.toJson()],
       });
 
+  /// Stores a received push as a Center row (`kind=push`). Safe to call for the
+  /// same push twice (foreground then tap): `record_push` keeps one row per
+  /// push, so the Center never shows a duplicate.
+  Future<void> recordPush(
+    String token, {
+    String? title,
+    String? body,
+    String? open,
+  }) => _cloud.call('record_push', {
+    'token': token,
+    'title': title,
+    'body': body,
+    'open': open,
+  });
+
   /// The user's notifications, newest first, cached per user. On a transport
   /// failure the stored list is returned with [CacheResult.offline] set; a
   /// function-level error (INVALID_TOKEN, …) still throws.

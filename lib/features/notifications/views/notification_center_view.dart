@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../break/models/break_args.dart';
 import '../../break/models/break_source.dart';
+import '../../push/models/push_open.dart';
 import '../models/app_notification.dart';
 import '../view_models/notification_center_view_model.dart';
 import '../widgets/notification_tile.dart';
@@ -53,11 +54,17 @@ class NotificationCenterView extends ConsumerWidget {
                             _showActions(context, viewModel, notification),
                         onTap: () {
                           viewModel.opened(notification);
-                          context.push(
-                            const BreakArgs(
-                              source: BreakSource.center,
-                            ).location,
-                          );
+                          // A push row reopens where the push pointed; a
+                          // reminder opens its 60 s break.
+                          if (notification.isPush) {
+                            context.go(pushOpenLocation(notification.open));
+                          } else {
+                            context.push(
+                              const BreakArgs(
+                                source: BreakSource.center,
+                              ).location,
+                            );
+                          }
                         },
                       );
                     },

@@ -78,15 +78,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 BreakView(args: BreakArgs.fromUri(state.uri)),
           ),
+          // Nested under Home so Back (incl. from a push/reminder deep link)
+          // returns Home instead of exiting the app.
+          GoRoute(
+            path: AppRoutes.history.substring(1),
+            builder: (context, state) => const HistoryView(),
+          ),
+          // The Pro screen is reachable only with a session (so never before
+          // sign up / onboarding, the only pre-session flow).
+          GoRoute(
+            path: AppRoutes.pro.substring(1),
+            redirect: (context, state) async =>
+                await ref.read(tokenStorageProvider).read() == null
+                ? AppRoutes.splash
+                : null,
+            builder: (context, state) => const ProView(),
+          ),
         ],
       ),
       GoRoute(
         path: AppRoutes.reminderPermission,
         builder: (context, state) => const ReminderPermissionView(),
-      ),
-      GoRoute(
-        path: AppRoutes.history,
-        builder: (context, state) => const HistoryView(),
       ),
       GoRoute(
         path: AppRoutes.settings,
@@ -110,16 +122,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return null;
         },
         builder: (context, state) => const TrialStartedView(),
-      ),
-      // The Pro screen is reachable only with a session (so never before sign
-      // up / onboarding, which is the only pre-session flow).
-      GoRoute(
-        path: AppRoutes.pro,
-        redirect: (context, state) async =>
-            await ref.read(tokenStorageProvider).read() == null
-            ? AppRoutes.splash
-            : null,
-        builder: (context, state) => const ProView(),
       ),
     ],
   );

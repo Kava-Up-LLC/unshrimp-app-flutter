@@ -8,6 +8,8 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/session/reminder_data_cleanup.dart';
 import '../../break/models/break_args.dart';
 import '../models/auth_exception.dart';
+import '../../push/models/push_open.dart';
+import '../../push/view_models/push_providers.dart';
 import '../../reminders/repositories/reminder_notifications.dart';
 import '../../reminders/services/reminder_scheduler.dart';
 import '../models/session_start.dart';
@@ -87,9 +89,15 @@ class SessionGateViewModel extends AsyncNotifier<SessionStart> {
     );
   }
 
-  /// The break when a tapped reminder launched the app (cold start), else
-  /// Home.
+  /// Where a cold-start tap launched the app: the push's screen when a push
+  /// launched it (its `open` key), the break when a reminder did, else Home.
+  /// Routing it here (not in a separate listener) makes it the single startup
+  /// navigation, so it is never overridden by a fall-through to Home.
   Future<String> _launchLocation() async {
+    final launchPush = ref.read(pushBridgeProvider)?.launchOpen;
+    if (launchPush != null) {
+      return pushOpenLocation(launchPush.data?['open']);
+    }
     try {
       final payload = await ref
           .read(reminderNotificationsProvider)

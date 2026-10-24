@@ -178,7 +178,8 @@ void main() {
     // Open Settings, reconcile the three pending reminders as expired.
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Reconcile now (debug)'), 200);
+    await tester.ensureVisible(find.text('Reconcile now (debug)'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Reconcile now (debug)'));
     await tester.pumpAndSettle();
 

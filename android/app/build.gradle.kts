@@ -3,10 +3,11 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.appambit.unshrimp"
+    namespace = "com.kavaup.unshrimp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,10 +24,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.appambit.unshrimp"
+        applicationId = "com.kavaup.unshrimp"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Push (Firebase Cloud Messaging) requires API 24+.
+        minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -39,6 +41,22 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // dev and prod never share an applicationId, so both install side by side.
+    // The flavor only changes the id suffix and the launcher name; the App Key
+    // is passed separately via --dart-define and is not derived from the flavor.
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Unshrimp DEV")
+        }
+        create("prod") {
+            dimension = "env"
+            resValue("string", "app_name", "Unshrimp")
+        }
+    }
 }
 
 flutter {
@@ -47,4 +65,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Firebase Cloud Messaging for AppAmbit push notifications.
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-messaging")
 }

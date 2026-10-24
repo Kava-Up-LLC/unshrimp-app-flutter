@@ -18,13 +18,24 @@ import '../widgets/week_strip.dart';
 
 /// History: today's card, a best-streak / goal-met summary, and one strip per
 /// week. Reads `get_stats_history` through the cache, so it opens offline.
-class HistoryView extends ConsumerWidget {
+class HistoryView extends ConsumerStatefulWidget {
   const HistoryView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HistoryView> createState() => _HistoryViewState();
+}
+
+class _HistoryViewState extends ConsumerState<HistoryView> {
+  // Scroll target for a push opened with `open=report`; scrolled to once.
+  final _reportKey = GlobalKey();
+  bool _scrolledToReport = false;
+
+  @override
+  Widget build(BuildContext context) {
     final history = ref.watch(historyViewModelProvider);
     final viewModel = ref.read(historyViewModelProvider.notifier);
+    final focusReport =
+        GoRouterState.of(context).uri.queryParameters['focus'] == 'report';
 
     // A rejected token ends the session, exactly as on Home.
     ref.listen(historyViewModelProvider, (_, next) {
@@ -33,6 +44,20 @@ class HistoryView extends ConsumerWidget {
         context.go(AppRoutes.logIn);
       }
     });
+
+    if (focusReport && !_scrolledToReport) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final target = _reportKey.currentContext;
+        if (target != null) {
+          _scrolledToReport = true;
+          Scrollable.ensureVisible(
+            target,
+            duration: const Duration(milliseconds: 300),
+            alignment: 0.1,
+          );
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +71,7 @@ class HistoryView extends ConsumerWidget {
               viewModel.reload(),
               ref.read(weeklyReportViewModelProvider.notifier).reload(),
             ]),
-            child: _HistoryContent(history: value),
+            child: _HistoryContent(history: value, reportKey: _reportKey),
           ),
           AsyncError(:final error) => _HistoryError(
             message: error is AuthException
@@ -62,9 +87,10 @@ class HistoryView extends ConsumerWidget {
 }
 
 class _HistoryContent extends StatelessWidget {
-  const _HistoryContent({required this.history});
+  const _HistoryContent({required this.history, required this.reportKey});
 
   final StatsHistory history;
+  final GlobalKey reportKey;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +106,7 @@ class _HistoryContent extends StatelessWidget {
         // The weekly Spine Report, above the weeks. Free sees it blurred behind
         // its own Pro lock (its locked state follows the entitlement, not this
         // payload's is_pro).
-        const SpineWeekCard(),
+        KeyedSubtree(key: reportKey, child: const SpineWeekCard()),
         const SizedBox(height: 24),
         // Free sees today's card, then the weeks blurred behind a Pro lock.
         if (!history.isPro)

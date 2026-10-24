@@ -8,11 +8,13 @@ import 'package:unshrimp_app/features/auth/view_models/log_in_view_model.dart';
 import 'package:unshrimp_app/features/auth/view_models/session_gate_view_model.dart';
 import 'package:unshrimp_app/features/auth/view_models/sign_up_view_model.dart';
 import 'package:unshrimp_app/features/notifications/repositories/delivery_log.dart';
+import 'package:unshrimp_app/features/push/services/push_notifications.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_notifications.dart';
 import 'package:unshrimp_app/features/reminders/repositories/reminder_preferences.dart';
 import 'package:unshrimp_app/features/reminders/services/reminder_scheduler.dart';
 
 import '../notifications/fakes.dart';
+import '../push/fakes.dart';
 import '../reminders/fakes.dart';
 import '../../support/in_memory_prefs.dart';
 import 'fakes.dart';
@@ -22,6 +24,7 @@ ProviderContainer _container(
   FakeTokenStorage store, [
   FakeReminderScheduler? scheduler,
   FakeReminderNotifications? notifications,
+  FakePushNotifications? push,
 ]) {
   final container = ProviderContainer(
     overrides: [
@@ -35,6 +38,9 @@ ProviderContainer _container(
       ),
       deliveryLogProvider.overrideWithValue(FakeDeliveryLog()),
       reminderPreferencesProvider.overrideWithValue(FakeReminderPreferences()),
+      pushNotificationsProvider.overrideWithValue(
+        push ?? FakePushNotifications(),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -117,6 +123,48 @@ void main() {
 
       expect(store.token, isNotNull);
       expect(scheduler.fromServerCalls, 1);
+    });
+
+    test('login registers push when the OS permission is already granted', () async {
+      final push = FakePushNotifications();
+      final container = _container(
+        FakeAuthRepository(),
+        FakeTokenStorage(),
+        null,
+        null,
+        push,
+      );
+      container.listen(logInViewModelProvider, (_, _) {});
+      final vm = container.read(logInViewModelProvider.notifier)
+        ..emailChanged('ada@example.com')
+        ..passwordChanged('secret123');
+
+      await vm.submit();
+      await Future<void>.delayed(Duration.zero); // let the fire-and-forget run
+
+      expect(push.registerIfPermittedCalls, 1);
+      expect(push.registerCalls, 1);
+    });
+
+    test('login does not register push when the permission is not granted', () async {
+      final push = FakePushNotifications(enabled: true)..hasPermission = false;
+      final container = _container(
+        FakeAuthRepository(),
+        FakeTokenStorage(),
+        null,
+        null,
+        push,
+      );
+      container.listen(logInViewModelProvider, (_, _) {});
+      final vm = container.read(logInViewModelProvider.notifier)
+        ..emailChanged('ada@example.com')
+        ..passwordChanged('secret123');
+
+      await vm.submit();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(push.registerIfPermittedCalls, 1);
+      expect(push.registerCalls, 0);
     });
   });
 

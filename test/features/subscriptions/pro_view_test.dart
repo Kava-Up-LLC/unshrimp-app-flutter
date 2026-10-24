@@ -60,6 +60,8 @@ void main() {
     expect(find.text('Subscribe'), findsNothing);
     expect(find.text('Restore purchases'), findsNothing);
     expect(find.text(r'$14.99/yr'), findsNothing);
+    expect(find.text('Terms'), findsNothing);
+    expect(find.text('Privacy'), findsNothing);
     // The screen still renders its benefits.
     expect(find.text('Unshrimp Pro'), findsOneWidget);
   });

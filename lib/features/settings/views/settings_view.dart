@@ -15,8 +15,10 @@ import '../models/settings_options.dart';
 import '../models/settings_state.dart';
 import '../view_models/settings_view_model.dart';
 import '../widgets/option_sheet.dart';
+import '../widgets/fire_test_push_row.dart';
 import '../widgets/settings_group.dart';
 import '../widgets/settings_row.dart';
+import '../widgets/tips_news_row.dart';
 import '../widgets/work_days_sheet.dart';
 
 /// Settings: the logged-in user's `user_settings` row, editable in place.
@@ -142,6 +144,8 @@ class _SettingsContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+        const SettingsGroup(children: [TipsNewsRow()]),
+        const SizedBox(height: 16),
         SettingsGroup(
           children: [
             SettingsRow(
@@ -181,6 +185,7 @@ class _SettingsContent extends StatelessWidget {
                 trailing: const Icon(Icons.replay_outlined),
                 onTap: () => _replayLastOpDebug(context),
               ),
+              const FireTestPushRow(),
             ],
           ),
         ],

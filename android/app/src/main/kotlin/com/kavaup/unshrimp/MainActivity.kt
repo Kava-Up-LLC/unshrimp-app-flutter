@@ -1,4 +1,4 @@
-package com.appambit.unshrimp
+package com.kavaup.unshrimp
 
 import io.flutter.embedding.android.FlutterActivity
 

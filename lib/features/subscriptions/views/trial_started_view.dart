@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../models/pro_benefits.dart';
 import '../view_models/entitlement_view_model.dart';
+import '../view_models/pro_products_provider.dart';
 import '../widgets/pro_benefit_row.dart';
 
 /// Shown once, right after onboarding: the trial has started. "Start my trial"
@@ -19,6 +20,7 @@ class TrialStartedView extends ConsumerWidget {
     final entitlement = ref.watch(entitlementViewModelProvider).value;
     final days = entitlement?.trialDaysLeft(DateTime.now()) ?? 14;
     final trialDays = days > 0 ? days : 14;
+    final purchasesEnabled = ref.watch(purchasesEnabledProvider).value ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -61,11 +63,13 @@ class TrialStartedView extends ConsumerWidget {
                 onPressed: () => context.go(AppRoutes.home),
                 child: const Text('Start my trial'),
               ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => context.push(AppRoutes.pro),
-                child: const Text('Subscribe now'),
-              ),
+              if (purchasesEnabled) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.pro),
+                  child: const Text('Subscribe now'),
+                ),
+              ],
             ],
           ),
         ),

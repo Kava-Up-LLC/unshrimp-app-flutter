@@ -44,5 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment
+# Environment — app keys come from --dart-define, never the bundle.
 .env
+dart_defines/
+
+# Firebase (push). Android only; drop the file in by hand, never commit it.
+# Covers the main source set and any flavor source set (src/<flavor>/).
+android/app/google-services.json
+android/app/src/*/google-services.json

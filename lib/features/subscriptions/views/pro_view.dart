@@ -37,6 +37,7 @@ class ProView extends ConsumerWidget {
     final selected = ref.watch(selectedPlanProvider);
     final isBuying = ref.watch(purchaseViewModelProvider);
     final showStore = plans.isNotEmpty;
+    final purchasesEnabled = ref.watch(purchasesEnabledProvider).value ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Unshrimp Pro')),
@@ -102,21 +103,23 @@ class ProView extends ConsumerWidget {
                   child: const Text('Restore purchases'),
                 ),
               ],
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => _comingSoon(context, 'Terms'),
-                    child: const Text('Terms'),
-                  ),
-                  Text('·', style: TextStyle(color: colors.onSurfaceVariant)),
-                  TextButton(
-                    onPressed: () => _comingSoon(context, 'Privacy'),
-                    child: const Text('Privacy'),
-                  ),
-                ],
-              ),
+              if (purchasesEnabled) ...[
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => _comingSoon(context, 'Terms'),
+                      child: const Text('Terms'),
+                    ),
+                    Text('·', style: TextStyle(color: colors.onSurfaceVariant)),
+                    TextButton(
+                      onPressed: () => _comingSoon(context, 'Privacy'),
+                      child: const Text('Privacy'),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

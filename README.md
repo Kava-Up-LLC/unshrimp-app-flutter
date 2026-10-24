@@ -90,23 +90,29 @@ git clone <your fork> unshrimp && cd unshrimp
 flutter pub get
 ```
 
-### 2. Set your app keys
+### 2. Set your app key
 
-Create **one AppAmbit app per platform** (an iOS app and an Android app), then:
+Create **one AppAmbit app per platform** (an iOS app and an Android app). The key
+is **not bundled** — it is passed at build time through the `APPAMBIT_APP_KEY`
+compile-time define, using that platform's app key:
 
 ```bash
-cp .env.example .env
+flutter run --dart-define=APPAMBIT_APP_KEY=your-app-key
 ```
 
-Put each key in `.env` (it is gitignored; `.env` is registered as a Flutter asset
-and read at startup by `AppBootstrap`, which picks the key for the running OS):
+Prefer a file? Put the key in `dart_defines/dev.json` (the `dart_defines/` folder
+is gitignored) and pass it with `--dart-define-from-file`:
 
-```
-APPAMBIT_APP_KEY_IOS=your-ios-app-key
-APPAMBIT_APP_KEY_ANDROID=your-android-app-key
+```json
+{ "APPAMBIT_APP_KEY": "your-app-key" }
 ```
 
-> Using a single AppAmbit app for both platforms? Put the same key in both lines.
+```bash
+flutter run --dart-define-from-file=dart_defines/dev.json
+```
+
+> No key? The app shows a plain **"Missing App Key"** screen instead of starting.
+> See [`.env.example`](.env.example) for the define.
 
 ### 3. Create the database schema
 
@@ -134,7 +140,7 @@ put it in a file or a chat — a wrong/whitespace value fails silently as
 ### 6. Run
 
 ```bash
-flutter run
+flutter run --dart-define=APPAMBIT_APP_KEY=your-app-key
 ```
 
 Register, answer the 4-question onboarding (which seeds `user_settings`
@@ -245,16 +251,17 @@ auth_register / auth_login ──► token (+ expires_at)
 
 **Required to ship as your own app:**
 
-- **App keys** — your `APPAMBIT_APP_KEY_IOS` / `APPAMBIT_APP_KEY_ANDROID` in `.env`.
+- **App key** — your AppAmbit app key, passed per build with `--dart-define=APPAMBIT_APP_KEY=...` (see [Quick start](#quick-start)).
 - **App name** — user-visible name (currently *Unshrimp*): `pubspec.yaml`,
   Android `android/app/src/main/AndroidManifest.xml` (`android:label`), iOS
   `ios/Runner/Info.plist` (`CFBundleDisplayName`).
-- **Bundle id / applicationId** — Android `com.appambit.unshrimp`
+- **Bundle id / applicationId** — Android `com.kavaup.unshrimp`
   (`android/app/build.gradle.kts`), iOS bundle id in Xcode. The Dart package is
   `unshrimp_app` (`pubspec.yaml` `name`).
 - **Icons** — replace the sources and run `dart run flutter_launcher_icons`
   (config in `pubspec.yaml`).
 - **Backend** — your schema, functions and `AUTH_TOKEN_SECRET` (above).
+- **Push (Android)** — drop your Firebase `google-services.json` into `android/app/` (and into `android/app/src/<flavor>/` for a flavored build); it is gitignored, never committed. iOS needs no Firebase file — AppAmbit delivers via APNs using the key you upload in the dashboard.
 
 **Optional:** theme (`lib/core/theme/`), the reminder copy (`sarcasm_pack`),
 the exercise content and onboarding questions.
@@ -265,7 +272,7 @@ the exercise content and onboarding questions.
 lib/
   main.dart                 # calls AppBootstrap.run()
   core/
-    config/                 # .env load, SDK start, ProviderScope, root widget
+    config/                 # app-key define, SDK start, ProviderScope, root widget
     router/                 # go_router routes
     theme/                  # Material 3 light/dark palette
     cloud/                  # Cloud Code client + error types
@@ -300,7 +307,7 @@ business logic. State is Riverpod-only (**no `setState`**). Navigation is
 
 | Symptom | Fix |
 |---|---|
-| App boots to a blank/error screen | `.env` missing or `APPAMBIT_APP_KEY` empty. Copy `.env.example` and set the key. |
+| "Missing App Key" screen | No `APPAMBIT_APP_KEY` define was passed. Run with `--dart-define=APPAMBIT_APP_KEY=...` (see [Quick start](#quick-start)). |
 | Every call returns `INVALID_TOKEN` | `AUTH_TOKEN_SECRET` mismatched or re-set needed after a redeploy — set the **same** value on every function's active version. |
 | A call returns "Something went wrong" | The function has no `http` trigger. Add one (slug = function name, enabled). |
 | Login/onboarding don't work | `auth_validate` / `save_onboarding` not deployed or not activated — deploy and activate them, then set the secret. |

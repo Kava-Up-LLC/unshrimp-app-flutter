@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Unshrimp DEV (Android)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "dev", "--dart-define-from-file=dart_defines/dev.json"]
+    },
+    {
+      "name": "Unshrimp PROD (Android)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "prod", "--dart-define-from-file=dart_defines/prod.json"]
+    },
+    {
+      "name": "Unshrimp PROD (iPhone)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=dart_defines/prod_ios.json"]
+    },
+    {
+      "name": "Unshrimp DEV (iPhone)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=dart_defines/dev_ios.json"]
+    }
+  ]
+}

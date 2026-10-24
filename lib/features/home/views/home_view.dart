@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/flavor.dart';
 import '../../../core/router/app_routes.dart';
 import '../../auth/models/auth_exception.dart';
 import '../../break/models/break_args.dart';
@@ -109,6 +110,15 @@ class _HomeContent extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+        if (isDevFlavor())
+          Text(
+            'DEV',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.secondary,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
         const SizedBox(height: 12),
         const ProStatusPill(),
         // Shows the "Your Pro trial ended" sheet once, when the trial has

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../push/services/push_notifications.dart';
 import '../../reminders/services/reminder_scheduler.dart';
 import '../models/auth_exception.dart';
 import '../models/log_in_state.dart';
@@ -39,6 +40,14 @@ class LogInViewModel extends Notifier<LogInState> {
           .logIn(email: state.email.trim(), password: state.password);
       await ref.read(tokenStorageProvider).writeSession(session);
       unawaited(ref.read(reminderSchedulerProvider).rescheduleFromServer());
+      // A returning user on a new device never sees onboarding again, so
+      // register push here too — but only if the OS permission is already
+      // granted, so this never prompts.
+      unawaited(
+        ref.read(pushNotificationsProvider).registerIfPermitted().catchError(
+          (_) {},
+        ),
+      );
       if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, isAuthenticated: true);
     } on AuthException catch (e) {

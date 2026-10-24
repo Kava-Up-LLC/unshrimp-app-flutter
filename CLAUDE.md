@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-`unshrimp_app` (Unshrimp) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. User-visible app name is **Unshrimp** on both platforms (the Dart package is `unshrimp_app`); Android `applicationId`/`namespace` is `com.appambit.unshrimp`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
+`unshrimp_app` (Unshrimp) is a Flutter app in its early setup: `core/` is wired and `features/home` is a placeholder. Dependencies: `appambit_sdk_flutter`, `flutter_dotenv`, `flutter_riverpod`, `go_router`. User-visible app name is **Unshrimp** on both platforms (the Dart package is `unshrimp_app`); Android `applicationId`/`namespace` is `com.kavaup.unshrimp`, iOS bundle ID is `com.AppAmbit.TestAppSwift`. The general behavioral guidelines in the parent `../CLAUDE.md` also apply.
 
 Dart SDK constraint is `^3.11.0`, so newer syntax such as dot shorthands (`.fromSeed(...)`) is valid. Linting uses `flutter_lints` (`analysis_options.yaml`) with no custom rules.
 

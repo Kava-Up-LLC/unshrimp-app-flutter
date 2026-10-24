@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../push/services/push_notifications.dart';
 import '../models/reminder_permission_state.dart';
 import '../repositories/reminder_preferences.dart';
 import '../services/reminder_scheduler.dart';
@@ -15,9 +18,16 @@ class ReminderPermissionViewModel extends Notifier<ReminderPermissionState> {
   @override
   ReminderPermissionState build() => const ReminderPermissionState();
 
-  /// Shows the OS prompt; reminders are scheduled if the user allows them.
-  Future<void> allow() =>
-      _answer(() => ref.read(reminderSchedulerProvider).enable());
+  /// Shows the OS prompt; reminders are scheduled if the user allows them, and
+  /// push registers off the same grant (no second prompt).
+  Future<void> allow() => _answer(() async {
+    final granted = await ref.read(reminderSchedulerProvider).enable();
+    // Fire-and-forget: registering the push token must not hold up leaving the
+    // permission screen, and the SDK also uploads the token on start().
+    if (granted) {
+      unawaited(ref.read(pushNotificationsProvider).register().catchError((_) {}));
+    }
+  });
 
   Future<void> skip() => _answer(() async {});
 

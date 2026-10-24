@@ -1,0 +1,10 @@
+# Prod launcher icon (Android only — iOS keeps its single icon). Generated into
+# android/app/src/prod/res by `dart run flutter_launcher_icons`.
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  min_sdk_android: 21
+  image_path: "tool/launcher_icons/icon_launcher.png"
+  adaptive_icon_background: "#46C6BF"
+  adaptive_icon_foreground: "tool/launcher_icons/icon_foreground.png"
+  adaptive_icon_foreground_inset: 0

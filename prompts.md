@@ -9,9 +9,81 @@ Notification Center, the Posture Roast with the streak and Spine Battery, and
 the offline-first layer.
 
 Prompts marked **PREP** were run off camera before recording; the rest are the
-on-camera prompts. For how the app is wired and how to stand up the backend, see
+on-camera prompts. In the section titles, **oc** = on camera and **ofc** = off camera. For how the app is wired and how to stand up the backend, see
 the [README](README.md); for the project's coding rules, see
 [CLAUDE.md](CLAUDE.md).
+
+---
+
+# Generals
+
+Cross-cutting prompts that aren't tied to one episode.
+
+## G1. Work days / rest days (the graph and reminders respect them)
+
+**Goal:** a user who works, say, Monday–Saturday and rests Sunday should not see
+their rest day counted as a failure, lose their streak over it, or be nagged on
+it. The same active hours and days govern the reminders too.
+
+**Entrada:**
+- A per-user setting for **which weekdays are work days** (Mon first), stored on
+  `user_settings` as a 7-char "0/1" mask, default every day. It is edited in
+  **Settings → Work days** (a sheet with one toggle per day; at least one day
+  must stay on) and saved through `update_settings`; `get_settings` returns it.
+- **The streak respects it, server-side.** `get_stats_history` marks each day as
+  `rest` when it is not a work day and **skips rest days in the streak**: a rest
+  day neither breaks nor extends the run, so a goal met before and after bridges
+  across it. Rest days never count as "goal met".
+- **History shows a rest day as rest**, not an empty missed bar: a muted
+  "Rest day" row, no progress bar and no count.
+- **Reminders respect it too.** With rest days set, local notifications are
+  scheduled per work weekday (they don't fire on rest days); with every day
+  worked, scheduling stays daily as before. On a rest day, an ignored reminder
+  is **not counted** (`reconcile_ignored` gates on the day, like it already does
+  on active hours and pause).
+
+**Salida:** plan → OK → implement across settings, backend (`get_stats_history`,
+`get_settings`, `update_settings`, `reconcile_ignored`), History and the reminder
+scheduler; migrate `user_settings` with the new column; `flutter analyze` clean,
+`flutter test` green, and verify on device (History shows rest days and the
+bridged streak; Settings edits the days; reminders reschedule by work day).
+
+---
+
+## G2. Stand up the backend on a fresh AppAmbit app
+
+**When to use it:** any time the app needs a new AppAmbit backend (a new account, a new app, a
+clean environment). It builds everything from what is in this repository, so the result matches the
+current code. It is a restore, not a feature.
+
+```text
+Stand up the whole Unshrimp backend on my AppAmbit app from this repository, through the AppAmbit
+MCP, so the app works exactly as the current code expects. Do not change any behaviour; this is a
+restore, not a feature. Tell me your plan first and wait for my OK. Stop and ask whenever a step
+needs something only I can do in the dashboard.
+
+1. Database. Link a database to the app if there is none, then run docs/backend/schema.sql. Skip
+   anything that is commented out. Verify every table and index exists.
+2. Cloud Code. Deploy every function in cloud_functions/ except the helpers (files starting with an
+   underscore and the *.test.mjs files), each through the full lifecycle: create, deploy, wait for
+   the build to be ready, activate, add the http trigger with slug = function name. Keep a table of
+   name, version, status and trigger.
+3. Secrets. After all functions are active, give me the list of functions where I must set
+   AUTH_TOKEN_SECRET by hand in the dashboard (the same value on all of them), plus any other secret
+   a function reads. Wait until I confirm. Never ask me to paste a secret in the chat.
+4. Remote Config. Create every key documented in the README with its default. Leave out keys the
+   README marks as optional or absent by default.
+5. CMS. Recreate the content types documented in the README with their fields, and seed them with
+   the same values as the local fallbacks (lib/features/*/repositories/fallback_*.dart and
+   assets/dataset/), so online and offline content match.
+6. App key. Tell me which line of .env to update with the app key; never print a key.
+7. Verify through the MCP with a throwaway user: register, log in, save the onboarding, read the
+   settings and the stats, register a break with an op_id and the same op_id again (it must not count
+   twice), and reconcile ignored reminders. Then delete the throwaway user's rows.
+
+Report a checklist of what exists now and anything that did not match the README. Run flutter
+analyze and flutter test. Do not commit.
+```
 
 ---
 
@@ -334,7 +406,7 @@ error (e.g. WRONG_PASSWORD). When done, run flutter analyze and flutter test.
 > table. All app copy is in English. Episode 3 adds the local reminder engine, the 60s break, and the
 > Notification Center. Run these in order: #1 is prep (done before recording); #2 to #4 are the on-camera prompts, which the shooting script / script_time.txt label PROMPT 1, 2 and 3.
 
-## 1. Update the exercise data — media + office set  ·  PREP (run before recording)
+## 1. Update the exercise data — media + office set  ·  ofc PREP (run before recording)
 
 **Goal:** give every break exercise a picture/gif and replace the CMS catalog with the curated office
 set in `assets/dataset/`, keeping all five pain zones covered. Prep for the 60s break screen.
@@ -357,7 +429,7 @@ Source of truth: the folder assets/dataset/ in this repo (already in place). It 
 Tell me your plan before changing anything, and tell me clearly if the CMS rejects GIFs so we decide on static images.
 ```
 
-## 2. The local reminder engine (no cron)  ·  on-camera prompt 1
+## 2. The local reminder engine (no cron)  ·  oc prompt 1
 
 **Goal:** schedule recurring reminders as LOCAL notifications driven by the user's `user_settings`,
 with the text pulled from AppAmbit Remote Config / CMS. Cloud Code has no cron, so the schedule lives
@@ -397,7 +469,7 @@ landing on the lock screen with the app closed. Tell me your plan before writing
 flutter analyze and flutter test.
 ```
 
-## 3. The 60s Micro-Break screen (tapping a reminder opens it)  ·  on-camera prompt 2
+## 3. The 60s Micro-Break screen (tapping a reminder opens it)  ·  oc prompt 2
 
 **Goal:** the break screen the reminder opens, showing the stretch (with its picture) for the user's
 pain zone, a 60s timer, and the break_started / break_completed Analytics events.
@@ -427,7 +499,7 @@ Show me: tap a reminder -> the break opens -> complete it -> break_completed app
 leaving early fires nothing. Tell me your plan first, then run flutter analyze and flutter test.
 ```
 
-## 4. The Notification Center (history of every reminder)  ·  on-camera prompt 3
+## 4. The Notification Center (history of every reminder)  ·  oc prompt 3
 
 **Goal:** log every reminder the app shows into an AppAmbit `notifications` table, and build a
 Notification Center that lists them read/unread and reopens the break.
@@ -618,7 +690,7 @@ Then run flutter analyze and flutter test, and redo the warm-tap repro on the si
 > is a short on-camera beat; #3 to #5 are the on-camera prompts the shooting script labels PROMPT 1,
 > 2 and 3. Always say "episode", never "day", in anything that ends up on screen.
 
-## 1. The break waits for you: Start + 3, 2, 1  ·  PREP (run before recording)
+## 1. The break waits for you: Start + 3, 2, 1  ·  ofc PREP (run before recording)
 
 **Goal:** the 60 s countdown must not start by itself when the break opens. Reviewer feedback from
 episode 3. Small change, done off camera so the break shown in episode 4 already behaves this way.
@@ -634,7 +706,7 @@ Today BreakViewModel starts ticking and tracks break_started in build(). Change 
 Model this as a phase in BreakState (ready / countingIn / running / done) instead of booleans, keep Riverpod + MVVM + go_router and no setState, and update the tests in test/features/break/ so they cover: nothing tracked on open, break_started on Start, the 3-2-1 before the 60s. Run flutter analyze and flutter test. Do not touch the reminder engine or the Notification Center. Tell me your plan before changing anything, and wait for my OK.
 ```
 
-## 2. Rename the app to Unshrimp and the meter to Spine Battery  ·  on-camera quick beat (speed-ramp)
+## 2. Rename the app to Unshrimp and the meter to Spine Battery  ·  oc quick beat (speed-ramp)
 
 **Goal:** apply the two naming decisions as one visible change at the top of the episode. Show the
 prompt and the result (Home with the new name and the new card), nothing else.
@@ -649,7 +721,7 @@ Two renames from the episode 3 feedback, UI and copy only. Do NOT change the Dar
 Run flutter analyze and flutter test, then run the app so I can see Home with "Unshrimp" in the AppBar and the Spine Battery card at 100%. Tell me your plan before changing anything, and wait for my OK.
 ```
 
-## 3. The brain in the cloud: register_break and register_ignore  ·  on-camera prompt 1
+## 3. The brain in the cloud: register_break and register_ignore  ·  oc prompt 1
 
 **Goal:** the two Cloud Code functions that decide "did / did not", atomic, returning the new
 `user_stats`. Nothing is counted on the phone. The expected failure to capture: the agent counting
@@ -670,7 +742,7 @@ In the app: when the 60s break reaches 0 and the user taps Survived, call regist
 Do not build the Posture Roast screen or the reconciliation yet. Run flutter analyze and flutter test, show me both functions active, then run the app so I tap "Register ignore (debug)" and we watch user_stats in the AppAmbit dashboard: ignored_count 1, roast_level 1, and Spine Battery drops to 80%. Tell me your plan before changing anything, and wait for my OK.
 ```
 
-## 4. The app finds out: reconciliation of expired reminders  ·  on-camera prompt 2
+## 4. The app finds out: reconciliation of expired reminders  ·  oc prompt 2
 
 **Goal:** on launch and on resume, the app checks which reminders expired without a completed
 break and reports them ONCE. Marks `notifications.was_ignored = true` through Cloud Code.
@@ -692,7 +764,7 @@ Tests: the expired-row rule (inside/outside window, before/after grace), the "ne
 Demo setup, before you run the app: my test user must have roast_threshold = 3 (tone "direct"); check get_settings and tell me if it is not, so I change the tone in Settings first. The active window is already widened for recording. I have 3 untouched reminders in the Center. Then I tap "Reconcile now (debug)" and we watch user_stats go to ignored_count 3, roast_level 3, roast_pending true, Spine Battery 40%, and the three notifications rows flip to was_ignored = true. Then I reopen the app to prove it does not count again. Tell me your plan before changing anything, and wait for my OK.
 ```
 
-## 5. The Posture Roast and the way back  ·  on-camera prompt 3
+## 5. The Posture Roast and the way back  ·  oc prompt 3
 
 **Goal:** full-screen punishment when `roast_pending` is true, with the roast text living in Remote
 Config, and the break from there clearing everything. No new Cloud Code function; `register_break`
@@ -757,7 +829,7 @@ Demo: my user has roast_pending true from prompt 2 and Spine Battery 40%. I rela
 
 ---
 
-## 1. Loose ends sweep  ·  PREP (run before recording)
+## 1. Loose ends sweep  ·  ofc PREP (run before recording)
 
 **Goal:** finish what is already half-built, before the episode adds anything new. Ten
 independent blocks. Blocks 1 to 6 finish existing work; blocks 7 to 10 close the holes that only
@@ -926,7 +998,7 @@ fetch runs.
 
 ---
 
-## 2. Offline first, part one: the app remembers what it saw  ·  on-camera prompt 1
+## 2. Offline first, part one: the app remembers what it saw  ·  oc prompt 1
 
 **Goal:** the app opens and shows real content with no network, instead of a spinner and an
 error. Today every remote read goes straight to Cloud Code and fails hard when there is nothing
@@ -971,7 +1043,7 @@ changing anything, and wait for my OK.
 
 ---
 
-## 3. Offline first, part two: nothing the user earned gets lost, and the loop holds  ·  on-camera prompt 2
+## 3. Offline first, part two: nothing the user earned gets lost, and the loop holds  ·  oc prompt 2
 
 > **Self-contained: paste this whole section, from "Read CLAUDE.md" down to "wait for my OK".**
 > Nothing above it is needed.
@@ -1119,7 +1191,7 @@ and wait for my OK.
 
 ---
 
-# Episode 6 — Unshrimp starts charging: Pro for 14 days, then the basics
+# Episode 6 — Unshrimp Pro: 14 days free, and the cloud decides what is Pro
 
 > **Cloud Code lifecycle (applies to every function created or redeployed in this episode).**
 > Create → deploy → wait for the build to be `ready` → activate → **add the HTTP trigger**
@@ -1128,78 +1200,35 @@ and wait for my OK.
 > and are NOT inherited when a new version is activated; they cannot be read back, so a wrong or
 > whitespace paste fails silently as INVALID_TOKEN. Then **verify with a real token via MCP**
 > (`auth_login`, then call the function; it must NOT return INVALID_TOKEN). Cloud Code deploys are
-> single files: no imports, no npm, no outbound HTTP. `node:crypto` is available (the deployed
-> functions already use `createHmac` and `timingSafeEqual`).
+> single files: no imports, no npm, no outbound HTTP. `node:crypto` is available.
 
 > **No staged failures.** Nothing is broken on purpose and no bug is provoked to be fixed on camera.
-> The limits of the backend (no cron, no outbound HTTP, prices only from the store) are stated up
-> front as design constraints. Do not propose a "let's see what happens when it fails" beat.
+> The limits of the backend (no cron, no outbound HTTP) are stated up front as design constraints.
 
-> **Money rules that every prompt in this episode follows.** Nothing about money is decided on the
-> phone: `get_entitlements` in Cloud Code is the single source of truth, compared against the cloud's
-> clock, never the device's. Payments always need the network; the App Store does not open a payment
-> sheet offline, so the offline outbox from the previous episode is NEVER used for purchases. A
-> purchase is not finished in the store until AppAmbit has recorded it; if the network drops between
-> the charge and the record, the store delivers the purchase again on the next launch and it is
-> recorded once, because the ledger is idempotent by the store's transaction id. Prices are never
-> stored in Remote Config or in code: Apple requires the real localized store price. The paywall never
-> appears before the onboarding, before the first reminder, during a break or over the roast.
+> **The rule of this episode.** The phone never decides **who** is Pro or **what** is Pro.
+> `get_entitlements` in Cloud Code is the single source of truth for who, compared against the cloud's
+> clock, never the device's. What is Pro comes from the CMS. The app only draws locks and screens. The
+> Pro screen never opens before the onboarding, before the first reminder, during a break or over the
+> roast.
 
-> **What Pro sells.** Reminders, the Posture Roast, the Spine Battery, the streak and today's breaks
-> stay free for everyone. Pro unlocks three things: every exercise for the user's pain zone (Free
-> always gets the same single exercise for the zone chosen in onboarding), every roast pack (Free
-> hears only the default pack), and the stats history (Free sees today only). A subscription: 1.99 a
-> month or 14.99 a year, with prices always read from the store. Images only, no video. No ads, ever.
+> **What Pro sells.** Reminders, the Posture Roast, the Spine Battery, the streak, today's breaks and
+> the reminder lines stay free for everyone (the roast pack is chosen globally in Remote Config, it is
+> not a per-user choice, so it is not part of Pro). Pro unlocks three things: every exercise for the
+> user's pain zone (Free gets only the exercises marked free), the full history (Free sees today
+> only), and the weekly Spine Report. 1.99 a month or 14.99 a year; the price can be said in the video.
 
-> **State of the app and scope of this episode.** The AppAmbit backend is being recreated on a fresh
-> app, so the first PREP stands it back up from the sources in this repository. There are no flavors
-> in this episode; they come afterwards. Purchases are shown on **iOS only**, on a physical iPhone, in
-> the App Store **sandbox**; Android purchases come after the episode. The iOS bundle id is still the
-> placeholder `com.AppAmbit.TestAppSwift` until the account owner confirms the final one; the Android
-> `applicationId` is `com.appambit.unshrimp`. The read cache (`lib/core/cache/`) already reserves a
-> slot for an entitlement payload and `entitlement_grace_days` (default 7) in Remote Config.
-> `_applied_ops.mjs` is the idempotency snippet (insert the `op_id` first inside the same transaction;
-> on conflict skip the mutation and return the row unchanged; detect the replay by reading the row,
-> never by matching an error message). Run in order: three PREP prompts before recording, then three
-> on-camera prompts. Always say "episode", never "day", in anything that ends up on screen.
+> **Scope.** No purchase is shown on camera: no store sheet, no sandbox, no Start Pro tap. Purchases
+> are built off camera after the episode (section 5), Android first (Google Play, Kava Up LLC), then
+> iOS. No flavors. The read cache (`lib/core/cache/`) already reserves the `entitlement` slot and
+> `entitlement_grace_days` (default 7) in Remote Config. Always say "episode", never "day", in
+> anything that ends up on screen. Order: section 1 is done, 1b before recording; on camera two
+> prompts (sections 2 and 4); section 3 is optional and off camera; section 5 after the episode.
 
 ---
 
-## 1. Stand the backend back up  ·  PREP (run before recording)
+## 1. The stats history  ·  ofc PREP (done)
 
-**Goal:** a fresh AppAmbit app that behaves exactly like the backend at the end of episode 5, built
-only from what is in this repository.
-
-```text
-The AppAmbit account behind Unshrimp was deleted and I created a fresh app. Stand the whole backend
-back up from this repository, through the AppAmbit MCP, so the app works exactly as it did at the end
-of episode 5. Do not change any behaviour; this is a restore, not a feature. Tell me your plan first
-and wait for my OK. Stop and ask whenever a step needs something only I can do in the dashboard.
-
-1. Database. Link a database to the new app if there is none, then run docs/backend/schema.sql. Do not
-   create the commented purchases table yet. Verify every table and index exists.
-2. Cloud Code. Deploy every function in cloud_functions/ except the helpers (_applied_ops.mjs and the
-   *.test.mjs files), each through the full lifecycle: create, deploy, wait for ready, activate, add
-   the http trigger with slug = function name. Keep a table of name, version, status and trigger.
-3. Secrets. After all functions are active, give me the list of functions where I must set
-   AUTH_TOKEN_SECRET by hand in the dashboard (same value on all of them). Wait until I confirm.
-4. Remote Config. Create the keys documented in the README with their defaults: sarcasm_pack,
-   roast_lines (seed from episode 4 in prompts.md), min_supported_version left absent,
-   entitlement_grace_days = 7. Do not create the episode 6 keys yet.
-5. CMS. Recreate the content types onboarding_questions and exercises with the fields in the README
-   and seed them with the same values as the local fallbacks (fallback_onboarding_questions.dart,
-   fallback_exercises.dart and assets/dataset/exercises.json), so online and offline content match.
-6. App key. Tell me which line of .env to update with the new app key; never print a key.
-7. Verify through the MCP with a throwaway user: auth_register, auth_login, save_onboarding,
-   get_settings, get_user_stats, register_break with an op_id, the same op_id again (no second
-   count), reconcile_ignored. Then delete the throwaway user's rows.
-
-Report a checklist of what exists now. Run flutter analyze and flutter test. Do not commit.
-```
-
----
-
-## 2. The stats history  ·  PREP (run before recording)
+**Status:** ✅ implemented (`user_daily_stats`, `get_stats_history`, History screen, `docs/backend/seed_stats_history.sql`).
 
 **Goal:** the per-day history that Pro will sell, built before the episode and open to everyone for
 now. Prompt 1 on camera only puts it behind the gate.
@@ -1235,216 +1264,525 @@ returns zeros for missing days. Run flutter analyze and flutter test. Do not com
 
 ---
 
-## 3. iOS ready to buy  ·  PREP (run before recording)
+## 1b. Ready to record  ·  ofc PREP (paste before recording)
 
-**Goal:** everything on the iOS side that must exist before a sandbox purchase can happen, none of
-which is worth a camera beat.
+**Goal:** confirm the backend works with the secret set and leave the demo user ready. Nothing new is
+built.
 
 ```text
-Prepare the iOS side of Unshrimp for in-app purchases in the App Store sandbox. This is setup, not a
-product feature. Report block by block and stop whenever a step needs me (an account, a console, a
-device).
-
-Block 1, identity. Replace the placeholder bundle id com.AppAmbit.TestAppSwift with the final one I
-will give you (proposed com.appambit.unshrimp), in Runner and in RunnerTests. Set the display name to
-Unshrimp. Keep automatic signing; tell me where to pick the team in Xcode.
-
-Block 2, capability. Add the In-App Purchase capability to the Runner target.
-
-Block 3, a device build. Tell me the exact steps to run a debug build on my physical iPhone (Developer
-Mode, trusting the developer, flutter run on the device), and how to confirm the Sandbox Account
-option appears under the App Store settings afterwards.
-
-Block 4, the verification spike in Cloud Code. Deploy a throwaway function named crypto_spike that
-parses a PEM certificate with crypto.X509Certificate, checks a certificate against a parent public key
-with verify(), and verifies an ES256 signature with crypto.verify using dsaEncoding "ieee-p1363".
-Call it through the MCP and report exactly which of the three calls work. This decides whether iOS
-receipts are verified by signature (plan A) or shape-checked and deduplicated (plan B). Delete the
-function afterwards.
-
-Block 5, what I have to do by hand. A short checklist: the Paid Applications Agreement active, the
-app record in App Store Connect with the final bundle id, the subscription group "Unshrimp Pro" with
-unshrimp_pro_monthly (1 month, 1.99) and unshrimp_pro_yearly (1 year, 14.99) with an English
-localization, a sandbox tester signed in on the iPhone. Mark which ones block the on-camera prompts.
-
-Do not add the purchase plugin yet; that happens on camera. Run flutter analyze and flutter test.
-Do not commit.
+Before I record episode 6, check that the backend is ready. Do not build anything new.
+1. Through the MCP, log in with my demo user and call get_user_stats and get_stats_history. Neither
+   may return INVALID_TOKEN; if one does, tell me which function needs AUTH_TOKEN_SECRET on its active
+   version.
+2. Open the History screen in the app for that user and confirm it shows today and the weeks.
+3. Run the history seed (docs/backend/seed_stats_history.sql) for that user only, after showing me
+   the user_id and asking for my OK.
+4. Report in a short list: each function OK or not, rows seeded, and anything I must fix before
+   recording. Do not commit.
 ```
 
 ---
 
-## 4. The trial lives in the cloud  ·  on-camera prompt 1
+## 2. The trial lives in the cloud  ·  oc prompt 1
 
-**Goal:** every new user gets everything for 14 days; when it ends, the app drops to the basics with
-clear locks and an honest Pro screen; all of it decided in Cloud Code and changed from Remote Config,
-with no release.
+**Goal:** every new user gets Pro for 14 days; when it ends, the app drops to the basics with clear
+locks and an honest Pro screen, all decided in Cloud Code and changed from Remote Config, with no
+release.
 
 ```text
-Add the 14 day Pro trial to Unshrimp, decided entirely in the cloud, with the screens that make it
-visible. Nothing about money is decided on the phone. Tell me your plan in two parts, what you create
-in the cloud and what you change in the app, and wait for my OK.
+Add a 14 day Pro trial to Unshrimp, decided entirely in the cloud, with the screens that make it
+visible. The phone never decides who is Pro. Tell me your plan in two parts, what you create in the
+cloud and what you change in the app, and wait for my OK.
 
-The data. Add trial_ends_at, entitlement (pro_trial, pro or free) and pro_until to user_settings. In
-auth_register, set entitlement to pro_trial and trial_ends_at to now plus trial_days from Remote
+The data. user_settings already has trial_ends_at, entitlement (pro_trial, pro or free) and pro_until,
+reserved and unused; start using them. In auth_register, set entitlement to pro_trial and trial_ends_at to now plus trial_days from Remote
 Config, but ONLY when trial_ends_at is null; otherwise the trial would renew on every login and never
 end. Remote Config keys: trial_days (14), trial_warning_days (2), trial_warning_text ("Your trial ends
-in 2 days. Your spine does not care."), premium_packs (the pack ids that are Pro), pro_product_ids
-(the two store ids).
+in 2 days. Your spine does not care."), pro_price_labels (the two temporary price labels).
 
-The single source of truth. A Cloud Code function get_entitlements(token) that compares trial_ends_at
-and pro_until against the cloud's clock and returns is_pro, entitlement, trial_ends_at, pro_until and
-premium_packs. There is no cron in Cloud Code, so the trial expires when it is read, the same
-reconcile on open that the roast uses. get_stats_history returns only today when is_pro is false.
+The single source of truth. A new Cloud Code function get_entitlements(token) that compares
+trial_ends_at and pro_until against the cloud's clock and returns is_pro, entitlement, trial_ends_at
+and pro_until. There is no cron in Cloud Code, so the trial expires when it is read, the same
+reconcile on open that the roast uses. get_stats_history returns only today when the user is not Pro.
 
-The gate. A ProGate that reads is_pro through the existing read cache, using the entitlement slot and
-entitlement_grace_days, so a Pro user with no network stays Pro for the grace period. Free gets the
-first exercise in the CMS for the user's pain zone, always the same one (deterministic); Pro rotates
-through all of them. Free hears only the default pack, in the selector and in the reminder scheduler.
-Free sees today's card in History; the weeks are blurred.
+The gate. A ProGate that reads get_entitlements through the existing read cache, in the reserved
+entitlement slot with entitlement_grace_days, so a Pro user with no network stays Pro for the grace
+period. Free gets the first exercise in the CMS for the user's pain zone, always the same one; Pro
+keeps the current random pick among all the exercises of the zone. Free sees today's card in History
+and the weeks blurred.
 
 The screens. Follow DESIGN.md. All copy in English and never the word "server".
+- Right after the onboarding, once: a full screen "Your 14-day Pro trial has started", the three
+  benefits with a check, the line "No card needed. After 14 days you keep the basics for free.", a
+  primary button "Start my trial" that goes to Home, a secondary button "Subscribe now" that opens the
+  Pro screen, and a close X that also goes to Home.
 - Home: a status pill under the greeting that opens the Pro screen. "Pro trial · N days left" in
   teal; "Trial ends in 2 days" in amber when 2 days or fewer are left; "Free plan · See Pro" when
   free; "Pro" when Pro.
 - Locks where each Pro thing lives, not a wall: under the break's exercise a row "More exercises for
-  your neck · Pro" (use the user's zone); premium packs in Settings with a lock; History weeks
-  blurred with "Unlock your history · Pro". Tapping a lock opens the Pro screen. Never interrupt a
-  break in progress.
-- The Pro screen: title "Unshrimp Pro"; the trial line ("Your trial ends Oct 29" or "Your trial
-  ended"); three benefit rows, all exercises for your pain zone, every roast pack, your full history;
-  one honest line "Free keeps reminders, the Posture Roast, the Spine Battery and your streak.";
-  monthly and yearly plan cards whose prices will come from the store (until the next step, show
-  "Loading prices from the App Store" and never a number); a Start Pro button and Restore purchases
-  that do nothing yet; links to Terms and Privacy.
+  your neck · Pro" (use the user's zone); History weeks blurred with "Unlock your history · Pro".
+  Tapping a lock opens the Pro screen. Never interrupt a break in progress.
+- The Pro screen: title "Unshrimp Pro"; the trial line ("Your trial ends Oct 30" or "Your trial
+  ended"); three benefit rows: all exercises for your pain zone, your full history, your weekly Spine
+  Report; one honest line "Free keeps reminders, the Posture Roast, the Spine Battery and your
+  streak."; two plan cards, Monthly and Yearly (Yearly marked as the best value), and a "Subscribe"
+  button; links to Terms and Privacy. Until the store is connected, the card prices come from the
+  Remote Config key pro_price_labels ({"monthly": "$1.99 / month", "yearly": "$14.99 / year"}).
+- The purchase goes through a PurchaseService interface with one call, buy(plan), that returns
+  purchased, cancelled or failed. The store implementation is plugged in later, off camera; for now
+  the default implementation returns failed and the app shows "Purchases open soon. Your trial keeps
+  everything unlocked." While buy runs, the Subscribe button shows a spinner and the screen ignores
+  taps.
+- When buy returns purchased: a modal "Welcome to Unshrimp Pro" with a check, the three benefits
+  unlocked and a "Let's go" button. On "Let's go", refresh get_entitlements bypassing the cache, so
+  the pill and the locks follow what the cloud says, and go back to where the user was.
 - When the trial has ended, on the next open: a bottom sheet, shown once, "Your Pro trial ended",
   listing what stays and what is now Pro, with "See Pro" and "Continue free". It is not a wall.
 - A local notification trial_warning_days before trial_ends_at with trial_warning_text, scheduled the
   same way reminders are.
-The Pro screen never opens on its own before the onboarding, before the first reminder, during a
-break or over the roast.
 
 Cloud Code lifecycle for every function you create or redeploy, as stated at the top of this episode.
 Update the local sources in cloud_functions/ and docs/backend/schema.sql.
 
 Tests: a new user is born pro_trial with trial_ends_at = now + trial_days; logging in again does not
 reseed; trial_ends_at in the past reads as free; pro_until in the future reads as pro even if the
-trial is over; the Free picker is deterministic and the Pro picker rotates; premium packs are
-filtered for Free; get_stats_history returns only today for Free; the ended sheet shows once; the Pro
-screen never opens before onboarding. Run flutter analyze and flutter test.
+trial is over; the Free exercise is always the same; get_stats_history returns only today for Free;
+the ended sheet shows once; the trial screen shows once, after the onboarding; the Pro screen never
+opens before onboarding; Subscribe shows the spinner while buy runs; purchased shows the welcome modal
+and refreshes get_entitlements. Run flutter analyze and
+flutter test. Do not commit.
 
-Demo: I sign up a new user and Home shows "Pro trial · 14 days left" with everything open. I open the
-user_settings row in the dashboard and set trial_ends_at to yesterday. I reopen the app: the "Your
-Pro trial ended" sheet appears once, I continue free, and the break shows the same exercise with the
-locked row under it, Halloween is locked, History is blurred, and any lock opens the Pro screen. Then
-I change trial_days to 7 in Remote Config and sign up another user: born with 7 days, no release.
-Tell me your plan before changing anything, and wait for my OK.
+Demo: I sign up a new user; after the onboarding I see "Your 14-day Pro trial has started", I close
+it and Home shows "Pro trial · 14 days left" with everything open. I set
+trial_ends_at to yesterday in the dashboard and reopen the app: the "Your Pro trial ended" sheet
+appears once, I continue free, the break shows the same exercise with the locked row under it,
+History is blurred, and any lock opens the Pro screen. Then I change trial_days to 7 in Remote Config
+and sign up another user: born with 7 days, no release. Tell me your plan before changing anything,
+and wait for my OK.
+```
+
+> **What changed when this ran (2026-10-20).** Cloud Code cannot read Remote Config (its `ctx` only has
+> `req`, `event`, `consumer`, `env`, `secrets` and `appambit.{db,batch,cms,push}`), so `trial_days`
+> moved to a Cloud Code environment variable **`TRIAL_DAYS`** on `auth_register` (default 14 in code).
+> The other keys stay in Remote Config. The last demo step becomes: set `TRIAL_DAYS=7` on
+> `auth_register`, sign up another user, born with 7 days, no release. There are two AppAmbit apps
+> (Android and iOS), so every cloud change is made on both.
+
+---
+
+## 3. What is Pro is a field in the CMS  ·  ofc (optional)
+
+**Goal:** the app stops knowing which exercises are Pro. Each exercise in the CMS says it, and
+marketing can open one for everyone this week from the dashboard, with no release.
+
+```text
+Right now the app decides which exercise a Free user gets. Move that decision to the CMS. Tell me
+your plan first and wait for my OK.
+
+The CMS. Add a field tier to the exercises content type, with the values free and pro. Set the first
+exercise of each pain zone to free and every other one to pro, through the MCP, and update
+assets/dataset/exercises.json and the bundled fallback with the same values (an entry with no tier
+counts as pro, so nothing opens by accident).
+
+The app. Free gets a random pick among the exercises of the user's zone whose tier is free; if the
+zone has no free exercise, the first one of the zone, so Free always gets one. Pro keeps the random
+pick among all of them. The locked row "More exercises for your neck · Pro" shows only while the zone
+has pro exercises the user cannot see. The CMS is read through the existing read cache, so a change
+in the dashboard reaches the phone on the next open, never in the middle of a break.
+
+Tests: tier free and pro are parsed; a missing tier is pro; Free never gets a pro exercise; Free with
+two free exercises gets both over several picks; a zone with no free exercise still gives Free one;
+Pro gets every exercise. Run flutter analyze and flutter test. Do not commit.
+
+Demo: with the Free user from the last prompt, the neck break shows one exercise and the locked row.
+In the CMS I set a second neck exercise to free and reopen the app: the break now rotates between
+two, with no release. Then I set it back to pro and it is locked again. Tell me your plan before
+changing anything, and wait for my OK.
 ```
 
 ---
 
-## 5. Connect the App Store, in the sandbox  ·  on-camera prompt 2
+## 4. The weekly Spine Report  ·  oc prompt 2
 
-**Goal:** the app talks to the App Store: the Pro screen shows the real store prices, in the sandbox.
-Short and visual; the purchase itself is the next prompt.
-
-```text
-Connect Unshrimp to the App Store, in the sandbox, so the Pro screen shows the real store prices.
-iOS only for now. Tell me your plan first and wait for my OK.
-
-Add in_app_purchase, the official Flutter plugin, with StoreKit 2 enabled on iOS. Check the current
-version and the exact name of the StoreKit 2 switch before using them; do not guess. Read the product
-ids from pro_product_ids in Remote Config and ask the store for unshrimp_pro_monthly and
-unshrimp_pro_yearly. On the Pro screen, show each plan with the localized price the store returns,
-and mark the yearly plan as the better value only with a saving computed from the two store prices.
-If the store returns nothing, show "Plans are unavailable right now." and never a number. Wire
-Restore purchases to the store's restore call and only log what comes back; recording it is the next
-prompt. On debug builds, show a small "Sandbox" tag on the Pro screen so it is obvious on camera
-that no real money moves. Start Pro still does nothing.
-
-Tell me exactly what I have to do by hand before the demo (the sandbox account on the iPhone, the
-capability in Xcode), and keep anything with an account, an email or a key off the screen.
-
-Tests: products are requested with the ids from Remote Config; no price is hardcoded anywhere;
-an empty response shows the unavailable message. Run flutter analyze and flutter test.
-
-Demo: on my iPhone, signed in with the sandbox tester, the Pro screen shows Monthly and Yearly with
-the App Store prices and the Sandbox tag. Tell me your plan before changing anything, and wait for my
-OK.
-```
-
----
-
-## 6. The purchase, verified in the cloud  ·  on-camera prompt 3
-
-**Goal:** the user pays in the App Store sandbox, Cloud Code verifies the receipt with `node:crypto`
-alone, writes it to a ledger, and turns the user Pro. The same receipt twice changes nothing: the
-idempotency of episode 5 again, now with money.
+**Goal:** Pro's history stops being a list of numbers. Every week the cloud reads the user's week,
+compares it with the one before, and writes a verdict in the roast's voice.
 
 ```text
-Wire the purchase into Unshrimp on iOS, and make the cloud the only thing that decides who is Pro.
-Tell me your plan first and wait for my OK. Two things I want confirmed explicitly in your plan: where
-the purchase is finished in the store (it must be after AppAmbit answers OK, never before), and what
-key makes grant_entitlement idempotent (the store's transaction id, plus the op_id from applied_ops).
+Add a weekly Spine Report to Unshrimp Pro. Tell me your plan first and wait for my OK.
 
-The constraint that shapes everything: Cloud Code has no outbound HTTP, so it cannot call Apple. It
-does have node:crypto. StoreKit 2 gives the phone a JWS signed by Apple with the certificate chain in
-the x5c header. Verify the chain up to the Apple Root CA G3 certificate embedded as a constant in the
-function, then the ES256 signature with the leaf key, and read bundleId, productId, transactionId,
-originalTransactionId, purchaseDate, expiresDate and environment. Reject a bundleId that is not ours.
-If the crypto spike from the PREP showed that X509Certificate is not available, use plan B: validate
-the shape (bundle id, product id, dates) and deduplicate by transactionId without a cryptographic
-check, and say so in a comment at the top of the function.
+The cloud. A new Cloud Code function get_weekly_report(token, tz_offset_min). It reads
+user_daily_stats for the last complete week, Monday to Sunday in the user's local time, and for the
+week before. It returns week_start, breaks, ignored, best_day (the day with the most breaks),
+longest_streak (consecutive goal_met days inside the week), breaks_delta against the week before,
+and a verdict. If get_entitlements says the user is not Pro, it returns only { locked: true }.
 
-The ledger. A table purchases(id, user_id, store, product_id, transaction_id UNIQUE,
-original_transaction_id, environment, purchased_at, expires_at, raw_payload, status, created_at).
+The verdict. A table report_verdicts(id, rank, min_breaks, max_ignored, text) that I can edit in the
+dashboard. The function returns the text of the row with the lowest rank whose conditions the week
+meets (a null condition always matches). Seed it through the MCP with these rows, rank order:
+1. min_breaks 30, max_ignored 3: "Seven for seven. Your spine wrote you a thank you note."
+2. min_breaks 20: "Solid week. Your spine is cautiously optimistic."
+3. max_ignored 5: "Not many breaks, but you didn't ignore me. I'll take it."
+4. no conditions: "You ignored me {ignored} times. I counted."
+Replace {ignored} with the number.
 
-The functions.
-- grant_entitlement(token, store, product_id, payload, op_id): in one transaction, insert the op_id
-  into applied_ops first (the snippet from _applied_ops.mjs, inlined), verify the receipt, insert the
-  purchases row (if the transaction_id already exists, insert nothing and change nothing), then set
-  entitlement to pro and pro_until to expiresDate. A purchase during the trial makes the user pro.
-  Return the same object as get_entitlements.
-- restore_entitlement(token, store, payloads[]): verify each active purchase the store reports and
-  recompute pro_until from the latest one. A purchase belongs to the store account, not the Unshrimp
-  account: if an original_transaction_id is already bound to another user_id, reject it with
-  PURCHASE_OWNED_BY_ANOTHER_USER and change nothing. With no outbound HTTP the cloud cannot be told
-  about renewals or cancellations, so the app sends what the store says is active on every launch and
-  pro_until follows it.
+The app. In History, above the weeks, a card "Your spine this week" with the four numbers (breaks,
+ignored, best day, longest streak), a line "▲ 6 more breaks than last week" or "▼ 3 fewer breaks than
+last week", and the verdict. A Share button that shares the card as an image, the same way the roast
+is shared. A local notification every Monday at 9:00, "Your Spine Report is ready.", scheduled the
+same way reminders are, only while the user is Pro or in the trial; it opens History. For Free, the
+card is blurred with "Unlock your Spine Report · Pro" and opens the Pro screen. Follow DESIGN.md;
+English copy; read through the read cache.
 
-The app. Start Pro calls the store; on purchased or restored, send the JWS to grant_entitlement with a
-fresh op_id generated at the tap. Only when AppAmbit answers OK, complete the purchase in the store,
-then refresh get_entitlements and the gate. If AppAmbit fails, do NOT complete it: the store delivers
-it again on the next launch and the same transaction id is recorded once. A purchase attempt with no
-network shows a plain message; it never queues. On every launch and on Restore purchases, send the
-store's active purchases to restore_entitlement.
+Seed for the demo: extend the history seed so the demo user has three full weeks, with the last
+complete week clearly better than the one before, and run it only when I say so.
 
 Cloud Code lifecycle for every function you create or redeploy, as stated at the top of this episode.
 Update the local sources in cloud_functions/ and docs/backend/schema.sql.
 
-Tests: a valid receipt grants pro and writes one row; a tampered payload is rejected with
-INVALID_RECEIPT and changes nothing; the same transaction_id twice leaves one row and the same
-pro_until; the same op_id twice is a no-op; a purchase during the trial sets pro; expiresDate in the
-past reads as free; restore with another user's original_transaction_id is rejected; the app does not
-complete the purchase when grant_entitlement fails. Run flutter analyze and flutter test.
+Tests: the week is Monday to Sunday in the user's local time; missing days count as zero;
+breaks_delta is against the week before; the lowest matching rank wins; the row with no conditions
+always matches; Free gets locked; the Monday notification is not scheduled for Free. Run flutter
+analyze and flutter test. Do not commit.
 
-Demo: on my iPhone, the user whose trial I expired opens the Pro screen, taps Monthly, Start Pro, and
-confirms in the sandbox sheet. The pill turns to Pro, the exercises rotate again, Halloween is back
-and History shows the weeks. In the dashboard, user_settings says pro with a pro_until and purchases
-has exactly one row. Then I tap Restore purchases: the same receipt comes back and purchases still
-has one row. Tell me your plan before changing anything, and wait for my OK.
+Demo: the demo user, still in the trial, opens History and sees the card with the four numbers, the
+arrow against last week and the verdict. I share it. In the dashboard I edit the verdict text that
+came out and reopen the app: the new text, no release. Then the Free user sees the same card blurred,
+and tapping it opens the Pro screen with the plans and Subscribe. Tell me your plan before changing anything, and wait for my OK.
+```
+
+---
+
+## 5. Purchases  ·  ofc, after the episode
+
+**Goal:** Pro can be bought. Built off camera, as far as the store permissions allow. Android first
+(Google Play, Kava Up LLC), then iOS when Kava Up has its Apple account. Replace pro_price_labels with the store's prices. Store inputs and the messages
+to the account owner: `MARKETING/.../day6_insumos_tiendas_sandbox_v1.md`.
+
+Money rules: payments always need the network and never go through the offline outbox; a purchase is
+not acknowledged in the store until AppAmbit has recorded it; the ledger is idempotent by the store's
+transaction id plus the op_id from applied_ops; prices are never in code or Remote Config, they come
+from the store.
+
+```text
+Wire purchases into Unshrimp on Android, with Google Play Billing, and keep the cloud as the only
+thing that decides who is Pro. Tell me your plan first and wait for my OK, and confirm in it where the
+purchase is acknowledged (after AppAmbit answers OK, never before) and what makes grant_entitlement
+idempotent.
+
+The constraint: Cloud Code has no outbound HTTP, so it cannot call the Google Play Developer API. It
+does have node:crypto. Each Play purchase comes with its original JSON and a signature made with the
+app's license key; verify that RSA SHA1 signature with the license public key stored as the secret
+PLAY_LICENSE_PUBLIC_KEY, then read packageName, productId, purchaseToken, orderId and purchaseTime.
+Reject a packageName that is not ours. Say in a comment at the top of the function that renewals and
+cancellations are not visible to the cloud, so the app reports what the store says is active on every
+launch.
+
+The ledger. A table purchases(id, user_id, store, product_id, transaction_id UNIQUE,
+original_transaction_id, environment, purchased_at, expires_at, raw_payload, status, created_at).
+
+The functions. grant_entitlement(token, store, product_id, payload, signature, op_id): one
+transaction, op_id first (_applied_ops.mjs inlined), verify, insert the purchase (an existing
+transaction_id inserts nothing), set entitlement to pro and pro_until; return the same object as
+get_entitlements. restore_entitlement(token, store, purchases[]): verify each active purchase and
+recompute pro_until; a purchase already bound to another user_id is rejected with
+PURCHASE_OWNED_BY_ANOTHER_USER.
+
+The app. in_app_purchase (check the current version; do not guess APIs). The Pro screen gets the two
+plan cards, unshrimp_pro_monthly and unshrimp_pro_yearly from pro_product_ids in Remote Config, with
+the store's localized prices instead of pro_price_labels; if the store returns nothing, the cards do
+not appear. Implement the PurchaseService from oc prompt 1 with the store (Subscribe opens the store sheet
+instead of "Purchases open soon"); return purchased only after grant_entitlement answers OK. Restore purchases. Acknowledge only after grant_entitlement answers OK.
+
+Cloud Code lifecycle as stated at the top of this episode. Tests: a valid signature grants pro and
+writes one row; a tampered payload is rejected with INVALID_RECEIPT; the same transaction twice leaves
+one row; the purchase is not acknowledged when grant_entitlement fails. Run flutter analyze and
+flutter test. Do not commit.
 ```
 
 ---
 
 ## After this episode (not run yet)
 
-These are planned and intentionally left out of the episode:
+- **iOS purchases** with StoreKit 2 when Kava Up LLC has its Apple account (the JWS verified with
+  `crypto.X509Certificate` against Apple Root CA G3, in the same `grant_entitlement`).
+- **Flavors** dev, stage and prod, so production rejects test purchases.
+- **More to sell:** more exercises per zone in the CMS (marked `tier`), more verdicts, with no code
+  change.
+- **Production:** the subscriptions submitted for review, Terms and Privacy published.
 
-- **Flavors** dev, stage and prod, so the production app rejects sandbox receipts and the test app
-  accepts them.
-- **Android purchases**: Play Billing with a license tester, the receipt verified with the Play
-  license public key (RSA) in the same `grant_entitlement`.
-- **More to sell**: more exercises per zone, more lines and roast packs, all from the CMS and Remote
-  Config, with no code change.
-- **Production**: the subscriptions submitted for review with an app version, Terms and Privacy
-  published.
+---
+
+# Episode 7 — From demo to product: two environments, push notifications, ready for production
+
+> **Cloud Code lifecycle (applies to every function created or redeployed in this episode).**
+> Create → deploy → wait for the build to be `ready` → activate → **add the HTTP trigger**
+> (`set-cloud-function-trigger`, type `http`, slug = function name, enabled) → **remind me to set
+> `AUTH_TOKEN_SECRET` on the active version** (same value on every function). Secrets are per version
+> and are NOT inherited when a new version is activated; they cannot be read back. Then **verify with a
+> real token via MCP** (`auth_login`, then call the function; it must NOT return INVALID_TOKEN). Cloud
+> Code deploys are single files: no imports, no npm, no outbound HTTP. `node:crypto` is available.
+
+> **No staged failures.** Nothing is broken on purpose and no bug is provoked to be fixed on camera.
+
+> **The rule of this episode.** One codebase, two clouds. The build decides which AppAmbit app it talks
+> to; the phone never knows. Dev and prod are two AppAmbit apps with two databases, two CMS, two Remote
+> Configs, the same functions and the same schema. Nothing from dev is readable from prod and the other
+> way round. Secrets and keys live outside the repo and outside the app bundle.
+
+> **Scope.** Android **and iOS** in this episode, in every prompt. This is the last episode of the
+> series. iOS runs on a physical iPhone signed with the test Apple team I set in Xcode; push on iPhone
+> goes through APNs from AppAmbit (no Firebase on iOS). Purchases are out: the plans and the
+> Subscribe button are hidden behind a Remote Config flag before recording and are never mentioned.
+> No Play Console, no App Store Connect, no keystore, no Apple keys (.p8) and no credentials on screen. Always say
+> "episode", never "day", in anything that ends up on screen. Order: section 1 before recording; on
+> camera three prompts (sections 2, 3 and 4).
+
+> **State of the app before this episode.** Two AppAmbit apps (Android and iOS) share the database
+> `UnshrimpDev` with 19 Cloud Code functions, Remote Config keys (`sarcasm_pack.active`, `roast_lines`,
+> `min_supported_version`, `entitlement_grace_days`, `trial_warning_days`, `trial_warning_text`,
+> `pro_price_labels`) and CMS content types (`exercises`, sarcasm packs, `report_verdicts`). The App Keys
+> are read from `.env` with flutter_dotenv and `.env` is declared as an asset in pubspec.yaml, so it
+> ships inside the APK. Release builds are signed with the debug keys. `targetSdk` follows the Flutter
+> default. Debug tools (Fire test reminder, Reconcile now) are behind `kDebugMode`. Local reminders use
+> `AndroidScheduleMode.inexactAllowWhileIdle`; keep it, never switch to exact alarms. Analytics events
+> go through `lib/core/analytics/event_log.dart`; Crash Reporting is on through the SDK. iOS: the
+> bundle id is still `com.AppAmbit.TestAppSwift` (a leftover from a test project), there is a single
+> Runner scheme with no flavors, the deployment target is iOS 13.0, there is no Push Notifications
+> capability or entitlements file yet, and the local reminders already ask the iOS notification
+> permission through flutter_local_notifications during the onboarding.
+
+---
+
+## 1. Purchases out, keys out of the bundle  ·  ofc PREP (paste before recording)
+
+**Goal:** leave the app ready for the episode: no purchase UI, App Keys out of the bundle, and the
+Firebase files in place for the push prompt.
+
+```text
+Prepare Unshrimp for the next episode. Three things, no new features.
+
+One. Hide the purchase UI behind a Remote Config flag. Add a boolean key purchases_enabled (default
+false). When it is false, the Pro screen shows only the trial status and the three benefits: no plan
+cards, no Subscribe button, no "Purchases open soon" message, no Terms and Privacy row. The
+"Subscribe now" button on the trial started screen is hidden too. When the key is true, everything
+comes back exactly as it is today. Remove DemoPurchaseService, the DEMO_PURCHASES define and their
+tests; keep PurchaseService, DefaultPurchaseService and the welcome modal as they are. Set the key to
+false in Remote Config for both existing apps through the MCP.
+
+Two. Take the App Keys out of the app bundle. Remove the .env asset from pubspec.yaml and the
+flutter_dotenv dependency. Read the App Key from a compile time define: APPAMBIT_APP_KEY, through
+String.fromEnvironment. If it is empty, the app does not start AppAmbit and shows a plain screen that
+says "Missing App Key. Run with --dart-define=APPAMBIT_APP_KEY=...". Keep .env.example only as
+documentation of the define, and add a dart_defines/ folder to .gitignore for the JSON files flutter
+run accepts with --dart-define-from-file. Update the README quick start accordingly. Do not print the
+key anywhere.
+
+Three. Firebase files for push notifications, Android only. Add android/app/google-services.json to
+.gitignore and to .gitignore in any flavor source set. Do not download or create one; I will drop the
+files in. Add a one line check in the README that says where each file goes. iOS needs no Firebase
+file: AppAmbit sends to iPhone through APNs with the key I upload in the dashboard.
+
+Run flutter analyze and flutter test. Do not commit. Tell me the exact flutter run command with the
+define.
+```
+
+---
+
+## 2. Two environments: dev and prod  ·  oc prompt 1
+
+**Goal:** flavors dev and prod on Android and iOS, and the whole backend replicated to two production
+AppAmbit apps (Android and iOS) from the terminal.
+
+```text
+Give Unshrimp two environments, dev and prod, on Android and iOS. Tell me your plan first and wait for
+my OK.
+
+The app. Two Android product flavors in android/app/build.gradle.kts: dev with applicationIdSuffix
+".dev" and the app name "Unshrimp DEV", and prod with the final applicationId and the name "Unshrimp".
+Both flavors read the App Key from the APPAMBIT_APP_KEY define; nothing else differs in Dart. The dev
+build shows a small DEV badge on the launcher icon (adaptive icon overlay generated at build time or a
+separate icon set, your call) and a thin "DEV" label under the greeting on Home. The prod build shows
+neither.
+
+iOS gets the same two flavors so that flutter run --flavor dev and --flavor prod work on an iPhone:
+build configurations Debug-dev, Release-dev, Debug-prod and Release-prod with matching schemes dev and
+prod. Bundle ids: prod uses the final iOS bundle id I give you (ask me for it in your plan; replace
+com.AppAmbit.TestAppSwift everywhere it appears, RunnerTests included), dev uses the same id with the
+suffix ".dev". Display names "Unshrimp DEV" and "Unshrimp". The DEV label on Home is the same Dart code
+on both platforms; an icon badge on iOS is optional. Signing stays automatic with the team I select in
+Xcode; never write or print a team id, certificate or profile. Flavor is read at runtime through a const String.fromEnvironment("FLAVOR") that the run
+commands pass; a build without it is treated as prod for the badge, never for the key. Keep
+flutter_launcher_icons working for both.
+
+The cloud. The two AppAmbit apps that exist today (Android and iOS) become dev and are not touched.
+Production needs two new AppAmbit apps, Unshrimp Prod Android and Unshrimp Prod iOS. If the MCP can
+create apps, create them and tell me their names; if it cannot, stop and tell me, I will create them in
+the dashboard and give you their App Keys, then continue. Mirror how dev is organised today: the two
+dev apps share one database, so the two prod apps share one new production database; anything that is
+per app in dev (Remote Config, CMS, functions, push credentials) is per app in prod too. Say in your plan
+which is shared and which is per app before doing anything. In production, replicate what dev has, in
+this order, and report each step: the database schema from docs/backend/schema.sql (every table, every index, nothing seeded
+except what I list next); every Cloud Code function from cloud_functions/ deployed, activated and
+with its HTTP trigger, lifecycle as stated at the top of this episode; the Remote Config keys with
+the same values dev has today, except purchases_enabled false and min_supported_version 1.0.0; the CMS
+content types and their entries: exercises, the sarcasm packs and report_verdicts, copied from dev.
+Do not copy users, user_settings, user_daily_stats, notifications or applied_ops. When you finish,
+remind me to set AUTH_TOKEN_SECRET on every active version in the production app, then verify with a
+real token by registering one throwaway user in production through auth_register and auth_login, and
+delete that user when the check passes. Print a table: function name, dev version, prod version,
+trigger, verified.
+
+Tests: the dev flavor and the prod flavor never share an applicationId or a bundle id; the badge and
+the label show only on dev; a build without APPAMBIT_APP_KEY shows the missing key screen; the schema in
+production matches schema.sql table by table. Run flutter analyze and flutter test, and build both
+flavors for Android and for iOS. Do not commit. Tell me the four exact flutter run commands (dev and
+prod, Android and iPhone).
+
+Demo: the dashboard shows the two new production apps. Production has the same functions, keys and CMS
+content as dev and zero users. On the Android phone, the prod build signs up the first production user,
+who appears in the production users table and nowhere in dev; the same on the iPhone. The dev builds
+still show the dev users and the DEV label.
+```
+
+---
+
+> **Run commands after this prompt (2026-10-23).** The App Keys never go on screen: they live in
+> `dart_defines/*.json` (gitignored), one file per environment, and the commands reference the file:
+>
+> ```bash
+> flutter run --flavor dev  --dart-define-from-file=dart_defines/dev.json
+> flutter run --flavor prod --dart-define-from-file=dart_defines/prod.json
+> ```
+>
+> Each file holds `APPAMBIT_APP_KEY` and `FLAVOR`. iOS has no flavors yet: run it with
+> `--dart-define-from-file=dart_defines/prod_ios.json` (prod) or `dev_ios.json` (dev) on the single scheme.
+> What the agent found while running this prompt: the MCP cannot create apps (create them in the
+> dashboard first), a content type is one definition per team associated to each app (CMS → Content
+> Types → exercises → Edit → Apps), and entries are seeded per app. Real counts: 20 functions, 8 tables
+> + 3 indexes, 9 Remote Config keys, 13 exercises, 4 verdict rows.
+
+---
+
+## 3. Push notifications with AppAmbit  ·  oc prompt 2
+
+**Goal:** the app can receive push notifications sent from the AppAmbit dashboard on Android and
+iPhone, and a tap opens the right screen. Reminders stay local.
+
+```text
+Add AppAmbit push notifications to Unshrimp, on Android and iOS. Tell me your plan first and wait for
+my OK.
+
+Use the official package appambit_sdk_push_notifications, latest 1.x: Firebase Cloud Messaging on
+Android, APNs on iOS (no Firebase on iOS). The Firebase files are already in place: android/app/src/dev/google-services.json and
+android/app/src/prod/google-services.json, one Firebase project per environment. Add the Google
+Services Gradle plugin and the Firebase BoM the package documents, minSdk 24 if it is lower. On iOS,
+add the Push Notifications capability and Background Modes with Remote notifications to both flavors
+(an entitlements file with aps-environment), keep the deployment target at iOS 13.0 or higher, and add
+whatever the package documents for the AppDelegate. I upload the Apple key (.p8, Key ID, Team ID) to the
+iOS apps in the dashboard; never ask for it or write it anywhere. Start PushNotificationsSdk right after
+AppAmbitSdk.start, only when the App Key is present.
+
+Permission: the app already asks for notifications during the onboarding (POST_NOTIFICATIONS on
+Android, the iOS permission through flutter_local_notifications); do not ask twice on either platform.
+Register for push after that permission is granted.
+
+Opened listener: when the user taps a push, read data["open"] and navigate: "history" opens History,
+"pro" opens the Pro screen, "report" opens History scrolled to the Spine Report card, anything else or
+missing opens Home. Reuse the reminder tap routing in the notification payload code; do not duplicate
+it. A push tapped while the app is closed must still land on the right screen after the splash.
+
+Foreground: when a push arrives with the app open, show it as a small in-app banner at the top for
+four seconds with the title and body, dismissible, that navigates the same way when tapped. Do not
+create a local notification for it, and on iOS do not let the system banner show on top of ours.
+
+Custom data on iOS: the dashboard lists Custom Data under the Android options. Check how the package
+exposes the data of an iOS push and make the open key work on iPhone too; if the dashboard cannot send
+it to iOS, tell me and fall back to opening Home on iPhone.
+
+Settings: a new switch "Tips and news" under Notifications, default on, bound to
+PushNotificationsSdk.setNotificationsEnabled and read back with isNotificationsEnabled. It controls
+push only; reminders keep their own switches.
+
+Local reminders and the Monday Spine Report notification stay exactly as they are; nothing in this
+prompt touches them.
+
+Analytics: log push_opened with the open key as a property, through the existing event log.
+
+Tests: the open key routes to the right screen for history, pro, report and unknown; the banner shows
+in foreground and navigates on tap; the switch persists; starting without an App Key does not start
+push. Run flutter analyze and flutter test, and build both flavors for Android and iOS. Do not commit.
+
+Demo: in each production app (Android and iOS), Push Notifications, Create Notification, Send To All
+App Users, title "Your spine this week is ready." with custom data open=report. The prod builds on the
+Android phone and on the iPhone receive it with the app closed; the tap opens History on the report
+card. Then the same with the app open: the banner. Then one scheduled with Send At for two minutes
+later.
+```
+
+---
+
+## 4. Ready for production  ·  oc prompt 3
+
+**Goal:** a release build on Android and iOS that could be uploaded: signed with our keys, final ids,
+no debug tools, account deletion, About screen.
+
+```text
+Make Unshrimp ready for a production release on Android and iOS. Tell me your plan first and wait for
+my OK.
+
+Signing. A release signingConfig that reads android/key.properties (storeFile, storePassword,
+keyAlias, keyPassword). key.properties and the keystore are in .gitignore and never printed. If the
+file is missing, the release build fails with a clear message instead of falling back to the debug
+keys. I already created the keystore; do not generate one.
+
+Build settings. Pin targetSdk and compileSdk to 35, versionName 1.0.0 and versionCode 1 from
+pubspec.yaml, R8 with resource shrinking on release, and a keep rule file if any plugin needs it.
+
+iOS release. Version 1.0.0 and build 1 from the same pubspec.yaml line. The prod flavor in Release
+uses the final bundle id and automatic signing with the team I select in Xcode; never print or store a
+team id, certificate or profile. Fill the usage descriptions in Info.plist that the plugins in use
+require, and nothing else. No App Store Connect upload.
+
+Debug tools. The debug section in Settings (Fire test reminder, Reconcile now) shows only when
+kDebugMode is true AND a Remote Config boolean debug_tools is true. Add the key with default false in
+both apps through the MCP.
+
+Account deletion. A new Cloud Code function delete_account(token) that removes the user's rows from
+users, user_settings, user_daily_stats, notifications and applied_ops, in a single transaction if
+the SQL runtime supports it, otherwise in that order with the user id as the guard, and returns
+{ deleted: true }. Any later call with the same token returns INVALID_TOKEN. In the app: Settings,
+Delete account (Android and iOS), a sheet that says what is lost, a second confirmation that asks the user to type
+DELETE, then the call, then local data cleared through the existing cleanup and back to the sign in
+screen. If the device is offline the sheet says deletion needs a connection and does nothing.
+
+About. Settings, About: app name, version and build number from package_info_plus, the flavor label
+on dev, links to Privacy Policy and Terms read from two Remote Config keys privacy_url and terms_url,
+and a line "Backend by AppAmbit". Add the two keys through the MCP with placeholder URLs.
+
+Permission copy. The final text for the notification permission rationale, English, in one place.
+
+Cloud Code lifecycle as stated at the top of this episode, in both apps. Update cloud_functions/ and
+docs/backend/schema.sql if anything changes.
+
+Tests: a release build without key.properties fails with the message; debug tools hidden when either
+flag is off; delete_account removes every row and the token stops working; the sheet refuses offline;
+About shows the version. Run flutter analyze, flutter test and the Cloud Code tests, and build the prod
+release for Android and iOS. Do not commit. Tell me the exact command to build the prod release APK and
+the exact command to install the prod release on my iPhone.
+
+Demo: the prod release installed on the Android phone and on the iPhone. Settings has no debug tools.
+About shows 1.0.0 on both. Delete account on the production user: type DELETE, back to sign in, and the
+user's rows are gone from every table in the production dashboard. Then Remote Config in production,
+min_supported_version to 1.1.0 (in both production apps): after it propagates, reopen the release
+builds, Update required. Back to 1.0.0, the app returns. No release.
+```
+
+---
+
+## After the series (not run yet)
+
+This is the last episode. Left for later, outside the videos:
+
+- Purchases: set purchases_enabled true when the store work of episode 6, section 5, is done.
+- CI: GitHub Actions with flutter analyze, flutter test and node --test on every pull request; tag
+  v1.0.0 on main.

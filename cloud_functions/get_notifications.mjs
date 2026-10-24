@@ -52,7 +52,7 @@ export const handler = async (ctx) => {
   if (!payload) return invalidToken;
 
   const found = await ctx.appambit.db(
-    `SELECT id, title, body, pack, sent_at, read, was_ignored, reminder_key
+    `SELECT id, title, body, pack, sent_at, read, was_ignored, reminder_key, kind, open
        FROM notifications
       WHERE user_id = ? AND hidden_at IS NULL
       ORDER BY sent_at DESC, id DESC
@@ -70,6 +70,8 @@ export const handler = async (ctx) => {
       read: Boolean(Number(column(row, 5, 'read'))),
       was_ignored: flag(column(row, 6, 'was_ignored')),
       reminder_key: column(row, 7, 'reminder_key') ?? null,
+      kind: column(row, 8, 'kind') ?? 'reminder',
+      open: column(row, 9, 'open') ?? null,
     })),
   };
 };

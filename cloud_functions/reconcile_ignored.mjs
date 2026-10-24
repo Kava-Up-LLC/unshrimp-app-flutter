@@ -194,7 +194,7 @@ export const handler = async (ctx) => {
   // double-count (app dies, is backgrounded or loses the network mid-way)
   // impossible. roast_pending is set in the SAME transaction as the counters.
   const pendingCount = `(SELECT COUNT(*) FROM notifications
-                           WHERE user_id = ? AND was_ignored IS NULL
+                           WHERE user_id = ? AND was_ignored IS NULL AND kind = 'reminder'
                              AND id IN (${placeholders}))`;
   const statements = [
     {
@@ -217,7 +217,7 @@ export const handler = async (ctx) => {
     {
       sql: `UPDATE notifications
                SET was_ignored = 1
-             WHERE user_id = ? AND was_ignored IS NULL AND id IN (${placeholders})`,
+             WHERE user_id = ? AND was_ignored IS NULL AND kind = 'reminder' AND id IN (${placeholders})`,
       params: [payload.sub, ...clean],
     },
   ];

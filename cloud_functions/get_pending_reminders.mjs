@@ -54,7 +54,7 @@ export const handler = async (ctx) => {
   const found = await ctx.appambit.db(
     `SELECT id, reminder_key, sent_at
        FROM notifications
-      WHERE user_id = ? AND read = 0 AND was_ignored IS NULL
+      WHERE user_id = ? AND read = 0 AND was_ignored IS NULL AND kind = 'reminder'
       ORDER BY sent_at ASC`,
     [payload.sub],
   );

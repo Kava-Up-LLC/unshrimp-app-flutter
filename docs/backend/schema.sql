@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   trial_ends_at        TEXT,      -- episode 6, reserved
   entitlement          TEXT,      -- episode 6, reserved
   pro_until            TEXT,       -- episode 6, reserved
+  updated_at           TEXT,      -- set by save_onboarding / update_settings
   active_days          TEXT NOT NULL DEFAULT '1111111'  -- "0/1" x7, Mon..Sun
 );
 
@@ -94,6 +95,8 @@ CREATE TABLE IF NOT EXISTS notifications (
   read         INTEGER NOT NULL DEFAULT 0,  -- 0/1
   was_ignored  INTEGER,                     -- NULL until reconciled, then 0/1
   reminder_key TEXT,
+  kind         TEXT NOT NULL DEFAULT 'reminder',  -- 'reminder' | 'push'
+  open         TEXT,                         -- push rows: go_router open key
   hidden_at    TEXT                          -- soft delete; NULL = visible
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id, sent_at);
